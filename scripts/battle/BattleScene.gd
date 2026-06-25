@@ -9,6 +9,8 @@ const CombatPreviewPanelScript := preload("res://scripts/ui/CombatPreviewPanel.g
 const FormationSystemScript := preload("res://scripts/battle/FormationSystem.gd")
 const MoraleSystemScript := preload("res://scripts/battle/MoraleSystem.gd")
 const ClassAbilityScript := preload("res://scripts/battle/ClassAbility.gd")
+const TerrainSystemScript := preload("res://scripts/map/TerrainSystem.gd")
+const DynamicTerrainScript := preload("res://scripts/map/DynamicTerrain.gd")
 
 var grid := TacticalGridMapScript.new(BattleManager.GRID_WIDTH, BattleManager.GRID_HEIGHT)
 var turn_manager := TurnManagerScript.new()
@@ -21,12 +23,15 @@ var current_preview: Dictionary = {}
 var log_messages: Array[String] = []
 var level_data: Dictionary = {}
 var morale_system := MoraleSystemScript.new()
+var terrain_system := TerrainSystemScript.new()
 
 func _ready() -> void:
 	level_data = GameManager.load_level()
+	terrain_system.configure(GameManager.terrain_catalog_data, level_data)
 	_load_units_from_level(level_data)
 	turn_manager.start_player_turn(player_units)
-	_add_log("阶段 3：阵线减伤、士气和刃卫处决窗口已启用。")
+	_apply_turn_start_terrain()
+	_add_log("阶段 4：动态地形和 3 回合地形记忆已启用。")
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -115,6 +120,7 @@ func _attack(attacker, defender) -> void:
 	var defender_was_in_formation := FormationSystemScript.is_unit_in_formation(defender, player_units + enemy_units)
 	var combat_context := _combat_context(attacker, defender)
 	var result: Dictionary = CombatFormulaScript.resolve(attacker, defender, weapon, combat_context)
+	terrain_system.mark_element_memory(defender.grid_position, attacker.element)
 	if result.get("did_hit", false):
 		var crit_text := ""
 		if result.get("did_crit", false):
@@ -153,6 +159,7 @@ func _end_player_turn() -> void:
 	if turn_manager.phase == TurnManagerScript.Phase.ENEMY:
 		turn_manager.end_enemy_turn()
 		turn_manager.start_player_turn(player_units)
+		_apply_turn_start_terrain()
 		_add_log("第 %d 回合：玩家回合。" % turn_manager.turn_number)
 	queue_redraw()
 
@@ -229,6 +236,11 @@ func _unit_at(cell: Vector2i, team_filter := ""):
 
 func _occupied_cells_for_movement(except_unit = null) -> Dictionary:
 	var occupied := {}
+	for x in range(grid.width):
+		for y in range(grid.height):
+			var cell := Vector2i(x, y)
+			if terrain_system.is_blocked(cell, turn_manager.turn_number):
+				occupied[cell] = true
 	for unit in player_units + enemy_units:
 		if unit == except_unit or not unit.is_alive():
 			continue
@@ -255,11 +267,15 @@ func _weapon_for(unit) -> Dictionary:
 	return weapon
 
 func _combat_context(attacker, defender) -> Dictionary:
-	return {
-		"damage_taken_multiplier": FormationSystemScript.damage_taken_multiplier(defender, player_units + enemy_units),
-		"bonus_damage": ClassAbilityScript.execution_bonus_damage(attacker, defender),
-		"hit_mod": morale_system.hit_modifier(attacker.team)
-	}
+	var modifiers: Dictionary = terrain_system.combat_modifiers_at(defender.grid_position)
+	modifiers["damage_taken_multiplier"] = FormationSystemScript.damage_taken_multiplier(defender, player_units + enemy_units)
+	modifiers["bonus_damage"] = ClassAbilityScript.execution_bonus_damage(attacker, defender)
+	modifiers["hit_mod"] = int(modifiers.get("hit_mod", 0)) + morale_system.hit_modifier(attacker.team)
+	return modifiers
+
+func _apply_turn_start_terrain() -> void:
+	for message in terrain_system.advance_turn(turn_manager.turn_number, player_units + enemy_units):
+		_add_log(message)
 
 func _is_in_attack_range(attacker, defender) -> bool:
 	var weapon := _weapon_for(attacker)
@@ -293,6 +309,9 @@ func _draw_grid() -> void:
 			var fill := Color(0.18, 0.14, 0.09)
 			if (x + y) % 2 == 0:
 				fill = Color(0.22, 0.17, 0.11)
+			var terrain_color: Color = DynamicTerrainScript.terrain_color(terrain_system.terrain_id_at(Vector2i(x, y)))
+			if terrain_color.a > 0.0:
+				fill = terrain_color
 			draw_rect(rect, fill, true)
 			draw_rect(rect, Color(0.56, 0.45, 0.28, 0.55), false, 1.0)
 

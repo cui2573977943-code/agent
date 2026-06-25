@@ -18,10 +18,14 @@ flowchart TD
     BattleScript --> FormationSystem[FormationSystem.gd]
     BattleScript --> MoraleSystem[MoraleSystem.gd]
     BattleScript --> ClassAbility[ClassAbility.gd]
+    BattleScript --> TerrainSystem[TerrainSystem.gd]
+    TerrainSystem --> DynamicTerrain[DynamicTerrain.gd]
+    TerrainSystem --> TerrainMemory[TerrainMemory.gd]
     GameManager --> LevelJson[CH01_L01.json]
     GameManager --> DifficultyJson[difficulty_profiles.json]
     GameManager --> ClassJson[classes.json]
     GameManager --> WeaponJson[weapons.json]
+    GameManager --> TerrainJson[base_terrains.json]
 ```
 
 ## 文件职责
@@ -40,6 +44,9 @@ flowchart TD
 - `scripts/battle/MoraleSystem.gd`：玩家/敌方士气与负士气命中修正。
 - `scripts/battle/ClassAbility.gd`：职业能力入口，当前接入刃卫处决窗口。
 - `scripts/map/GridMap.gd`：网格范围、曼哈顿距离、移动范围和占位寻路。
+- `scripts/map/TerrainSystem.gd`：地形放置、战斗修正、回合开始效果、地形记忆写入。
+- `scripts/map/DynamicTerrain.gd`：动态地形规则和地图色彩。
+- `scripts/map/TerrainMemory.gd`：3 回合元素残留。
 - `scripts/ui/CombatPreviewPanel.gd`：将战斗预览数据格式化为 HUD 文本。
 - `scenes/battle/BattleScene.tscn`：最小主场景。
 
@@ -59,12 +66,13 @@ flowchart TD
 - `data/units/classes.json`
 - `data/units/weapons.json`
 - `data/units/supports.json`
+- `data/terrains/base_terrains.json`
 
-`data/terrains/base_terrains.json` 已提供给后续阶段使用。当前战斗公式支持 terrain 参数，但场景还没有把 TileMap 地形传入公式。
+当前没有 TileMapLayer，地形由 `TerrainSystem` 读取关卡坐标后交给 `_draw()` 绘制。阶段 8 可替换为正式 TileMapLayer 和油画 tile。
 
 ## 已知限制
 
 - 阶段 1 没有 TileMapLayer，网格由 `_draw()` 动态绘制。
 - 敌方 AI 是占位逻辑，不使用 Utility AI。
 - 没有保存、Camp、Shader 和正式资产。
-- 地形修正字段已在公式中支持，但阶段 2 的场景仍按默认地形结算。
+- 崩塌城墙和契约祭坛已有数据与接口，但主动破墙、占领召唤等完整交互留到后续关卡/AI 阶段。
