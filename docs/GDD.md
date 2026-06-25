@@ -1,8 +1,8 @@
 # GDD: 纹章残卷：油画纪年
 
-## 阶段 1 范围
+## 当前完成范围
 
-阶段 1 只实现最小可玩战斗循环：
+阶段 1 已实现最小可玩战斗循环：
 
 - 20x15 方格地图。
 - 玩家单位与敌方单位从 `data/levels/CH01_L01.json` 加载。
@@ -11,7 +11,16 @@
 - 胜利条件：击败全部敌军。
 - 失败条件：Elara 倒下。
 
-完整四象阵、阵线系统、动态地形、Utility AI、油画 Shader 和 Camp 系统留到后续阶段。
+阶段 2 已实现基础战斗系统：
+
+- 武器数据从 `data/units/weapons.json` 加载。
+- 职业基础数值和成长率从 `data/units/classes.json` 加载。
+- 四象阵克制：钢克森、森克潮、潮克焰、焰克钢。
+- 战斗预览：武器名、伤害、命中、暴击、克制状态。
+- 命中和暴击结算。
+- 玩家单位命中和击败敌人后获得经验；经验达到 100 后升级。
+
+阵线系统、动态地形、Utility AI、油画 Shader 和 Camp 系统留到后续阶段。
 
 ## 游戏支柱
 
@@ -34,13 +43,15 @@
 
 - 移动：曼哈顿距离，暂不计算地形消耗。
 - 攻击：若目标在攻击范围内即可攻击。
-- 伤害：`max(1, attacker.power + element_bonus - defender.defense)`。
-- 四象阵占位加成：优势 +2 伤害，劣势 -1 伤害。
+- 攻击范围：由武器 `min_range` 和 `max_range` 决定。
+- 命中：`attacker.hit + weapon.hit - defender.avoid + terrain.hit_mod + terrain.avoid_mod`。
+- 伤害：`max(1, round(max(0, attacker.power + weapon.power - defender.defense - terrain.defense_mod) * element_multiplier))`。
+- 克制倍率：优势 1.2，劣势 0.85，中性 1.0。
+- 暴击：命中后按武器暴击率判定，暴击伤害为 3 倍。
 - 单位行动后本回合不能再次行动。
 
 ## 后续阶段
 
-1. 阶段 2：替换占位伤害为完整战斗公式、武器、经验和升级。
-2. 阶段 3：实现 8 大兵种和阵线系统。
-3. 阶段 4：实现 6 类创新地形和地形记忆。
-4. 阶段 5：替换占位敌方行动为 Utility AI。
+1. 阶段 3：实现 8 大兵种和阵线系统。
+2. 阶段 4：实现 6 类创新地形和地形记忆。
+3. 阶段 5：替换占位敌方行动为 Utility AI。

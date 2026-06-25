@@ -3,6 +3,9 @@ extends Node2D
 const TacticalUnitScript := preload("res://scripts/battle/Unit.gd")
 const TurnManagerScript := preload("res://scripts/battle/TurnManager.gd")
 const TacticalGridMapScript := preload("res://scripts/map/GridMap.gd")
+const CombatFormulaScript := preload("res://scripts/battle/CombatFormula.gd")
+const WeaponDataScript := preload("res://scripts/battle/WeaponData.gd")
+const CombatPreviewPanelScript := preload("res://scripts/ui/CombatPreviewPanel.gd")
 
 var grid := TacticalGridMapScript.new(BattleManager.GRID_WIDTH, BattleManager.GRID_HEIGHT)
 var turn_manager := TurnManagerScript.new()
@@ -11,6 +14,7 @@ var enemy_units: Array = []
 var selected_unit = null
 var move_cells: Array[Vector2i] = []
 var attack_cells: Array[Vector2i] = []
+var current_preview: Dictionary = {}
 var log_messages: Array[String] = []
 var level_data: Dictionary = {}
 
@@ -18,7 +22,7 @@ func _ready() -> void:
 	level_data = GameManager.load_level()
 	_load_units_from_level(level_data)
 	turn_manager.start_player_turn(player_units)
-	_add_log("阶段 1：选择单位，点击蓝色格移动，点击敌人攻击，Enter 结束回合。")
+	_add_log("阶段 2：选择单位，移动后攻击；HUD 显示武器、命中、暴击与克制预览。")
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -48,7 +52,7 @@ func _load_units_from_level(data: Dictionary) -> void:
 
 	for entry in data.get("player_units", []):
 		var player_unit = TacticalUnitScript.new()
-		player_unit.configure_from_level_entry(entry, "player")
+		player_unit.configure_from_level_entry(entry, "player", GameManager.get_class_data(entry.get("class_id", "")))
 		player_units.append(player_unit)
 
 	for wave in data.get("enemy_waves", []):
@@ -56,7 +60,7 @@ func _load_units_from_level(data: Dictionary) -> void:
 			continue
 		for entry in wave.get("units", []):
 			var enemy_unit = TacticalUnitScript.new()
-			enemy_unit.configure_from_level_entry(entry, "enemy")
+			enemy_unit.configure_from_level_entry(entry, "enemy", GameManager.get_class_data(entry.get("class_id", "")))
 			enemy_units.append(enemy_unit)
 
 func _handle_left_click(cell: Vector2i) -> void:
@@ -67,7 +71,7 @@ func _handle_left_click(cell: Vector2i) -> void:
 
 	if selected_unit != null:
 		var target = _unit_at(cell, "enemy")
-		if target != null and grid.distance(selected_unit.grid_position, target.grid_position) <= selected_unit.attack_range:
+		if target != null and _is_in_attack_range(selected_unit, target):
 			_attack(selected_unit, target)
 			selected_unit.acted = true
 			_clear_selection()
@@ -79,6 +83,7 @@ func _handle_left_click(cell: Vector2i) -> void:
 			selected_unit.grid_position = cell
 			move_cells.clear()
 			attack_cells = _attack_cells_for(selected_unit)
+			_update_preview_for_selected()
 			_add_log("%s 移动到 %s。" % [selected_unit.display_name, str(cell)])
 			return
 
@@ -92,33 +97,37 @@ func _select_unit(unit) -> void:
 	selected_unit = unit
 	move_cells = grid.get_cells_in_range(unit.grid_position, unit.move_range, _occupied_cells_for_movement(unit))
 	attack_cells = _attack_cells_for(unit)
+	_update_preview_for_selected()
 	_add_log("选择 %s。" % unit.display_name)
 
 func _clear_selection() -> void:
 	selected_unit = null
 	move_cells.clear()
 	attack_cells.clear()
+	current_preview.clear()
 
 func _attack(attacker, defender) -> void:
-	var element_bonus := _element_damage_bonus(attacker.element, defender.element)
-	var damage: int = max(1, int(attacker.power) + element_bonus - int(defender.defense))
-	var applied: int = defender.receive_damage(damage)
-	_add_log("%s 攻击 %s，造成 %d 伤害。" % [attacker.display_name, defender.display_name, applied])
-	if not defender.is_alive():
+	var weapon := _weapon_for(attacker)
+	var result: Dictionary = CombatFormulaScript.resolve(attacker, defender, weapon)
+	if result.get("did_hit", false):
+		var crit_text := ""
+		if result.get("did_crit", false):
+			crit_text = " 暴击！"
+		_add_log("%s 用 %s 攻击 %s，造成 %d 伤害。%s" % [attacker.display_name, result["weapon_name"], defender.display_name, int(result["applied_damage"]), crit_text])
+		_award_experience(attacker, int(result["experience_on_hit"]))
+	else:
+		_add_log("%s 攻击 %s，但未命中。" % [attacker.display_name, defender.display_name])
+	if result.get("defender_defeated", false):
 		_add_log("%s 被击败。" % defender.display_name)
+		_award_experience(attacker, int(result["experience_on_kill"]))
 
-func _element_damage_bonus(attacker_element: String, defender_element: String) -> int:
-	var advantage := {
-		"steel": "verdant",
-		"verdant": "tide",
-		"tide": "flame",
-		"flame": "steel"
-	}
-	if advantage.get(attacker_element, "") == defender_element:
-		return 2
-	if advantage.get(defender_element, "") == attacker_element:
-		return -1
-	return 0
+func _award_experience(unit, amount: int) -> void:
+	if unit.team != "player":
+		return
+	var level_results: Array[String] = unit.gain_experience(amount)
+	_add_log("%s 获得 %d 经验（%d/100）。" % [unit.display_name, amount, unit.experience])
+	for result in level_results:
+		_add_log("%s 升级：%s。" % [unit.display_name, result])
 
 func _end_player_turn() -> void:
 	if not turn_manager.is_player_phase():
@@ -141,7 +150,7 @@ func _run_enemy_turn() -> void:
 		var nearest = _nearest_alive_unit(enemy.grid_position, player_units)
 		if nearest == null:
 			continue
-		if grid.distance(enemy.grid_position, nearest.grid_position) <= enemy.attack_range:
+		if _is_in_attack_range(enemy, nearest):
 			_attack(enemy, nearest)
 		else:
 			var occupied := _occupied_cells_for_movement(enemy)
@@ -215,12 +224,40 @@ func _occupied_cells_for_movement(except_unit = null) -> Dictionary:
 
 func _attack_cells_for(unit) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
+	var weapon := _weapon_for(unit)
+	var min_range := WeaponDataScript.min_range(weapon)
+	var max_range := WeaponDataScript.max_range(weapon)
 	for x in range(grid.width):
 		for y in range(grid.height):
 			var cell := Vector2i(x, y)
-			if grid.distance(unit.grid_position, cell) <= unit.attack_range:
+			var distance := grid.distance(unit.grid_position, cell)
+			if distance >= min_range and distance <= max_range:
 				result.append(cell)
 	return result
+
+func _weapon_for(unit) -> Dictionary:
+	var weapon := GameManager.get_weapon_data(unit.weapon_id)
+	if weapon.is_empty():
+		return WeaponDataScript.default_weapon()
+	return weapon
+
+func _is_in_attack_range(attacker, defender) -> bool:
+	var weapon := _weapon_for(attacker)
+	var distance := grid.distance(attacker.grid_position, defender.grid_position)
+	return distance >= WeaponDataScript.min_range(weapon) and distance <= WeaponDataScript.max_range(weapon)
+
+func _update_preview_for_selected() -> void:
+	current_preview.clear()
+	if selected_unit == null:
+		return
+	var target = _nearest_alive_unit(selected_unit.grid_position, enemy_units)
+	if target == null:
+		return
+	var weapon := _weapon_for(selected_unit)
+	var distance := grid.distance(selected_unit.grid_position, target.grid_position)
+	if distance < WeaponDataScript.min_range(weapon) or distance > WeaponDataScript.max_range(weapon):
+		return
+	current_preview = CombatFormulaScript.preview(selected_unit, target, weapon)
 
 func screen_to_grid(position: Vector2) -> Vector2i:
 	return Vector2i(floori(position.x / BattleManager.TILE_SIZE), floori(position.y / BattleManager.TILE_SIZE))
@@ -277,6 +314,9 @@ func _draw_hud() -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(x, y + 34), "Enter: 结束回合  Space: 等待  Esc: 取消", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.78, 0.62))
 
 	var line_y := y + 80
+	if not current_preview.is_empty():
+		draw_string(ThemeDB.fallback_font, Vector2(x, line_y), "战斗预览: %s" % CombatPreviewPanelScript.summary(current_preview), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.95, 0.84, 0.52))
+		line_y += 28
 	for message in log_messages.slice(max(0, log_messages.size() - 10), log_messages.size()):
 		draw_string(ThemeDB.fallback_font, Vector2(x, line_y), message, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.9, 0.86, 0.76))
 		line_y += 22

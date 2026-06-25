@@ -11,8 +11,14 @@ flowchart TD
     BattleScript --> TurnManager[TurnManager.gd]
     BattleScript --> TacticalUnit[Unit.gd]
     BattleScript --> GridMap[GridMap.gd]
+    BattleScript --> CombatFormula[CombatFormula.gd]
+    BattleScript --> Preview[CombatPreviewPanel.gd]
+    CombatFormula --> ElementAffinity[ElementAffinity.gd]
+    CombatFormula --> WeaponData[WeaponData.gd]
     GameManager --> LevelJson[CH01_L01.json]
     GameManager --> DifficultyJson[difficulty_profiles.json]
+    GameManager --> ClassJson[classes.json]
+    GameManager --> WeaponJson[weapons.json]
 ```
 
 ## 文件职责
@@ -22,9 +28,13 @@ flowchart TD
 - `autoload/BattleManager.gd`：存放阶段 1 的网格尺寸、tile 尺寸和战斗日志信号。
 - `autoload/AudioManager.gd`：音频占位，后续阶段接入音效。
 - `scripts/battle/BattleScene.gd`：阶段 1 主循环、输入、绘制、占位战斗。
-- `scripts/battle/Unit.gd`：单位数据模型与职业默认值。
+- `scripts/battle/Unit.gd`：单位数据模型、职业数值、经验和升级。
 - `scripts/battle/TurnManager.gd`：回合状态。
+- `scripts/battle/ElementAffinity.gd`：四象阵克制关系与倍率。
+- `scripts/battle/WeaponData.gd`：武器默认值和范围辅助。
+- `scripts/battle/CombatFormula.gd`：命中、暴击、伤害、经验奖励字段。
 - `scripts/map/GridMap.gd`：网格范围、曼哈顿距离、移动范围和占位寻路。
+- `scripts/ui/CombatPreviewPanel.gd`：将战斗预览数据格式化为 HUD 文本。
 - `scenes/battle/BattleScene.tscn`：最小主场景。
 
 ## 输入控制
@@ -36,16 +46,18 @@ flowchart TD
 
 ## 数据加载
 
-阶段 1 只读取：
+当前读取：
 
 - `data/levels/CH01_L01.json`
 - `data/ai/difficulty_profiles.json`
+- `data/units/classes.json`
+- `data/units/weapons.json`
 
-`data/units/classes.json` 与 `data/terrains/base_terrains.json` 已提供给后续阶段使用。阶段 1 的职业数值仍在 `Unit.gd` 中作为临时默认值，阶段 2-3 应迁移为完全数据驱动。
+`data/terrains/base_terrains.json` 已提供给后续阶段使用。当前战斗公式支持 terrain 参数，但场景还没有把 TileMap 地形传入公式。
 
 ## 已知限制
 
 - 阶段 1 没有 TileMapLayer，网格由 `_draw()` 动态绘制。
-- 阶段 1 没有完整武器、命中、暴击、经验、升级。
 - 敌方 AI 是占位逻辑，不使用 Utility AI。
 - 没有保存、Camp、Shader 和正式资产。
+- 地形修正字段已在公式中支持，但阶段 2 的场景仍按默认地形结算。

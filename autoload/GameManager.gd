@@ -2,13 +2,19 @@ extends Node
 
 const DEFAULT_LEVEL_PATH := "res://data/levels/CH01_L01.json"
 const DEFAULT_DIFFICULTY_PATH := "res://data/ai/difficulty_profiles.json"
+const DEFAULT_CLASSES_PATH := "res://data/units/classes.json"
+const DEFAULT_WEAPONS_PATH := "res://data/units/weapons.json"
 
 var current_level_id := "CH01_L01"
 var difficulty_id := "normal"
 var level_data: Dictionary = {}
 var difficulty_profile: Dictionary = {}
+var class_catalog: Dictionary = {}
+var weapon_catalog: Dictionary = {}
 
 func _ready() -> void:
+	load_class_catalog()
+	load_weapon_catalog()
 	load_difficulty(difficulty_id)
 	load_level(DEFAULT_LEVEL_PATH)
 
@@ -41,3 +47,23 @@ func load_difficulty(target_difficulty_id: String) -> Dictionary:
 	push_warning("Difficulty profile not found: %s" % target_difficulty_id)
 	difficulty_profile = {}
 	return difficulty_profile
+
+func load_class_catalog(path: String = DEFAULT_CLASSES_PATH) -> Dictionary:
+	class_catalog.clear()
+	var data := load_json(path)
+	for entry in data.get("classes", []):
+		class_catalog[entry.get("class_id", "")] = entry
+	return class_catalog
+
+func load_weapon_catalog(path: String = DEFAULT_WEAPONS_PATH) -> Dictionary:
+	weapon_catalog.clear()
+	var data := load_json(path)
+	for entry in data.get("weapons", []):
+		weapon_catalog[entry.get("weapon_id", "")] = entry
+	return weapon_catalog
+
+func get_class_data(class_id: String) -> Dictionary:
+	return class_catalog.get(class_id, {})
+
+func get_weapon_data(weapon_id: String) -> Dictionary:
+	return weapon_catalog.get(weapon_id, {})

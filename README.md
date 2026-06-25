@@ -12,8 +12,9 @@
 
 - 已完成提示词审查：`docs/PROMPT_AUDIT.md`。
 - 已完成阶段 1 Godot 项目骨架：`project.godot`。
+- 已完成阶段 2 基础战斗系统：四象克制、武器、战斗预览、经验升级。
 - 当前主场景：`scenes/battle/BattleScene.tscn`。
-- 当前玩法：选择单位、移动、攻击、等待、结束回合、敌方占位行动。
+- 当前玩法：选择单位、移动、攻击、等待、结束回合、敌方占位行动、命中/暴击/克制结算。
 
 ## 文件说明
 
@@ -26,6 +27,8 @@
 - `docs/SUB_PROMPTS.md`：分模块提示词，用于战斗、地形、AI、关卡、剧情、美术和平衡迭代。
 - `data/ai/difficulty_profiles.json`：故事/普通/困难/噩梦四档 AI 能力约束样例。
 - `data/levels/CH01_L01.json`：第一关「灰桥伏击」样例关卡数据。
+- `data/units/classes.json`：阶段 2 职业基础数值和成长率。
+- `data/units/weapons.json`：阶段 2 武器威力、命中、暴击、射程和经验奖励。
 
 ## 运行方式
 
