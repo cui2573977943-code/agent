@@ -39,6 +39,14 @@
 
 Utility AI、油画 Shader 和 Camp 系统留到后续阶段。
 
+## 当前视觉状态
+
+- 阶段 1-4 优先实现玩法，不依赖外部图片资源。
+- 地图上单位由 `UnitSpriteRenderer` 程序绘制，不是最终角色 sprite。
+- 右侧 UI 由 `BattleHudRenderer` 程序绘制，不是最终油画风 UI 素材。
+- `assets/sprites/` 与 `assets/ui/` 目前只有 README，占位说明后续应导入的正式资源。
+- 按原计划，油画 Shader、正式 tile、角色立绘和 UI 框体属于后续美术阶段（阶段 8）。
+
 ## 游戏支柱
 
 1. 战术站位：后续阶段会通过阵线系统放大站位价值。

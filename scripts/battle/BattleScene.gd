@@ -5,12 +5,13 @@ const TurnManagerScript := preload("res://scripts/battle/TurnManager.gd")
 const TacticalGridMapScript := preload("res://scripts/map/GridMap.gd")
 const CombatFormulaScript := preload("res://scripts/battle/CombatFormula.gd")
 const WeaponDataScript := preload("res://scripts/battle/WeaponData.gd")
-const CombatPreviewPanelScript := preload("res://scripts/ui/CombatPreviewPanel.gd")
 const FormationSystemScript := preload("res://scripts/battle/FormationSystem.gd")
 const MoraleSystemScript := preload("res://scripts/battle/MoraleSystem.gd")
 const ClassAbilityScript := preload("res://scripts/battle/ClassAbility.gd")
 const TerrainSystemScript := preload("res://scripts/map/TerrainSystem.gd")
 const DynamicTerrainScript := preload("res://scripts/map/DynamicTerrain.gd")
+const UnitSpriteRendererScript := preload("res://scripts/ui/UnitSpriteRenderer.gd")
+const BattleHudRendererScript := preload("res://scripts/ui/BattleHudRenderer.gd")
 
 var grid := TacticalGridMapScript.new(BattleManager.GRID_WIDTH, BattleManager.GRID_HEIGHT)
 var turn_manager := TurnManagerScript.new()
@@ -31,7 +32,7 @@ func _ready() -> void:
 	_load_units_from_level(level_data)
 	turn_manager.start_player_turn(player_units)
 	_apply_turn_start_terrain()
-	_add_log("阶段 4：动态地形和 3 回合地形记忆已启用。")
+	_add_log("占位 UI 已启用：右侧单位卡、立绘框、战斗预览和战场记录。")
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -50,10 +51,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	var viewport_size := get_viewport_rect().size
+	BattleHudRendererScript.draw_background(self, viewport_size)
 	_draw_grid()
 	_draw_highlights()
 	_draw_units()
-	_draw_hud()
+	_draw_hud(viewport_size)
 
 func _load_units_from_level(data: Dictionary) -> void:
 	player_units.clear()
@@ -328,19 +331,10 @@ func _draw_units() -> void:
 		if not unit.is_alive():
 			continue
 		var center := grid_to_screen(unit.grid_position) + Vector2.ONE * (BattleManager.TILE_SIZE * 0.5)
-		var color := Color(0.1, 0.25, 0.55)
-		if unit.team == "enemy":
-			color = Color(0.45, 0.08, 0.06)
-		if unit.acted:
-			color = color.darkened(0.35)
-		draw_circle(center, 14.0, color)
-		draw_circle(center, 15.0, Color(0.79, 0.64, 0.15), false, 2.0)
-		draw_string(ThemeDB.fallback_font, center + Vector2(-10, 5), unit.display_name.substr(0, 2), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
-		draw_string(ThemeDB.fallback_font, center + Vector2(-18, 27), "%d/%d" % [unit.hp, unit.max_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.95, 0.88, 0.72))
+		var is_selected: bool = selected_unit == unit
+		UnitSpriteRendererScript.draw_unit(self, unit, center, BattleManager.TILE_SIZE, is_selected)
 
-func _draw_hud() -> void:
-	var x := BattleManager.GRID_WIDTH * BattleManager.TILE_SIZE + 24
-	var y := 32
+func _draw_hud(viewport_size: Vector2) -> void:
 	var phase_text := "玩家回合"
 	if turn_manager.phase == TurnManagerScript.Phase.ENEMY:
 		phase_text = "敌方回合"
@@ -349,17 +343,14 @@ func _draw_hud() -> void:
 	elif turn_manager.phase == TurnManagerScript.Phase.DEFEAT:
 		phase_text = "失败"
 
-	draw_string(ThemeDB.fallback_font, Vector2(x, y), "第 %d 回合 - %s" % [turn_manager.turn_number, phase_text], HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.95, 0.84, 0.52))
-	draw_string(ThemeDB.fallback_font, Vector2(x, y + 34), "Enter: 结束回合  Space: 等待  Esc: 取消", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.78, 0.62))
-	draw_string(ThemeDB.fallback_font, Vector2(x, y + 56), "士气 玩家:%d 敌方:%d" % [morale_system.value("player"), morale_system.value("enemy")], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.78, 0.62))
-
-	var line_y := y + 102
-	if not current_preview.is_empty():
-		draw_string(ThemeDB.fallback_font, Vector2(x, line_y), "战斗预览: %s" % CombatPreviewPanelScript.summary(current_preview), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.95, 0.84, 0.52))
-		line_y += 28
-	for message in log_messages.slice(max(0, log_messages.size() - 10), log_messages.size()):
-		draw_string(ThemeDB.fallback_font, Vector2(x, line_y), message, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.9, 0.86, 0.76))
-		line_y += 22
+	BattleHudRendererScript.draw_side_panel(self, viewport_size)
+	BattleHudRendererScript.draw_turn_banner(self, turn_manager.turn_number, phase_text)
+	if selected_unit != null:
+		BattleHudRendererScript.draw_unit_card(self, selected_unit, _weapon_for(selected_unit), current_preview)
+	else:
+		BattleHudRendererScript.draw_empty_unit_card(self)
+	BattleHudRendererScript.draw_status_block(self, morale_system.value("player"), morale_system.value("enemy"))
+	BattleHudRendererScript.draw_log(self, log_messages)
 
 func _cell_rect(cell: Vector2i) -> Rect2:
 	return Rect2(grid_to_screen(cell), Vector2.ONE * BattleManager.TILE_SIZE)

@@ -38,7 +38,7 @@ def validate_combat_scripts() -> None:
         assert_true(token in combat, f"CombatFormula.gd missing {token}")
 
     scene = read_text("scripts/battle/BattleScene.gd")
-    for token in ["CombatFormulaScript.resolve", "CombatFormulaScript.preview", "_award_experience", "CombatPreviewPanelScript.summary"]:
+    for token in ["CombatFormulaScript.resolve", "CombatFormulaScript.preview", "_award_experience", "BattleHudRendererScript.draw_unit_card"]:
         assert_true(token in scene, f"BattleScene.gd missing {token}")
 
 
