@@ -40,7 +40,9 @@
   - 源文档持久化于 `rag_document` 表，向量索引在内存重建。
   - 接口：`POST /rag/rebuild` 重建、`GET /rag/documents` 查看、`POST /rag/search` 调试检索。
   - **预测时会先从 RAG 检索**该标的最相关的资料，注入到思维树与 ReAct 推理中。
-- **ReAct 引擎**（`service/ai/react/ReActEngine.java`）：以「思考(Thought) → 行动(Action) → 观察(Observation)」循环推进。预测的每一轮裁决都是一次 ReAct episode，模型可调用工具 `RAG_SEARCH`（检索知识库）与 `NEWS_SEARCH`（爬取财经新闻）补充证据后再下结论。该实现不依赖模型的 function-calling 能力，兼容任意 OpenAI 兼容模型。
+- **ReAct 引擎**（`service/ai/react/ReActEngine.java`）：以「思考(Thought) → 行动(Action) → 观察(Observation)」循环推进。预测的每一轮裁决都是一次 ReAct episode，模型可调用工具 `RAG_SEARCH`（检索知识库）与 `NEWS_SEARCH`（爬取财经新闻）补充证据后再下结论。
+  - **优先使用原生 function-calling**：`AiClient.supportsToolCalling()` 会探测并缓存模型/服务是否支持工具调用；支持则用 LangChain4j 的 `ToolSpecification` + `ToolExecutionResultMessage` 让模型自行决定调用工具；
+  - **自动回退**：若不支持工具调用（探测报错）或调用过程异常，则回退到基于 JSON 协议的手动 ReAct，兼容任意 OpenAI 兼容模型。
 - **多轮验证与投票**：对单标的进行 N 轮 ReAct 裁决，多数派占比 **> 60%** 才确认最终结论，提升分析稳定性。
 
 > 数据准备：可在「资产看板」录入价格历史（每行 `日期,收盘价`）以生成核心波动文档，使 RAG 的波动分析更准确。

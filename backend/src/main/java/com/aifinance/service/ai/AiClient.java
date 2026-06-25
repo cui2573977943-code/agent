@@ -1,10 +1,13 @@
 package com.aifinance.service.ai;
 
 import com.aifinance.entity.AiConfig;
+import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.slf4j.Logger;
@@ -32,6 +35,9 @@ public class AiClient {
     /** 以配置指纹缓存已构建的模型, 避免多轮调用重复创建 HTTP 客户端 */
     private final Map<String, ChatModel> modelCache = new ConcurrentHashMap<>();
 
+    /** 以配置指纹缓存"是否支持 function-calling(工具调用)"的探测结果 */
+    private final Map<String, Boolean> toolSupportCache = new ConcurrentHashMap<>();
+
     /**
      * 发起一次对话补全。
      *
@@ -57,6 +63,50 @@ public class AiClient {
         } catch (Exception e) {
             throw new IllegalStateException("调用 AI 接口异常: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 低层调用: 直接传入 LangChain4j 的 {@link ChatRequest}(可携带工具规范), 返回完整响应。
+     * 供 function-calling 模式使用。
+     */
+    public ChatResponse chat(AiConfig config, ChatRequest request) {
+        ChatModel model = buildModel(config);
+        return model.chat(request);
+    }
+
+    /**
+     * 探测当前模型/服务是否支持 function-calling(工具调用), 结果按配置缓存。
+     * 探测方式: 发送一个携带工具规范的极简请求, 不抛异常即视为支持。
+     */
+    public boolean supportsToolCalling(AiConfig config) {
+        validate(config);
+        String key = fingerprint(config);
+        Boolean cached = toolSupportCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        boolean supported;
+        try {
+            ChatModel model = buildModel(config);
+            ToolSpecification probe = ToolSpecification.builder()
+                    .name("noop")
+                    .description("connectivity probe, do not call")
+                    .parameters(JsonObjectSchema.builder()
+                            .addStringProperty("input", "ignored")
+                            .build())
+                    .build();
+            ChatRequest request = ChatRequest.builder()
+                    .messages(List.of(UserMessage.from("reply with: ok")))
+                    .toolSpecifications(List.of(probe))
+                    .build();
+            model.chat(request);
+            supported = true;
+        } catch (Exception e) {
+            log.info("模型不支持 function-calling, 将使用手动 ReAct: {}", e.getMessage());
+            supported = false;
+        }
+        toolSupportCache.put(key, supported);
+        return supported;
     }
 
     /**

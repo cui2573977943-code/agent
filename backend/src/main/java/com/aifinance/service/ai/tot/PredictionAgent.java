@@ -204,6 +204,9 @@ public class PredictionAgent {
                     .append(n.getSummary() == null ? "" : (": " + n.getSummary())).append("\n"));
             return sb.toString();
         });
+        Map<String, String> toolDescriptions = new LinkedHashMap<>();
+        toolDescriptions.put("RAG_SEARCH", "检索历史理财与核心股票/基金波动知识库, input 为检索关键词");
+        toolDescriptions.put("NEWS_SEARCH", "检索最新财经新闻, input 为关键词(通常是标的名称)");
 
         String rolePreamble = "你是严谨的投资决策评审, 正在对单只标的的短期(未来1~4周)走势做独立裁决。"
                 + "你可以使用工具 RAG_SEARCH(检索历史理财与核心波动知识库) 与 NEWS_SEARCH(检索最新财经新闻) 来补充证据。";
@@ -222,7 +225,8 @@ public class PredictionAgent {
             VoteResult v = new VoteResult();
             v.setRound(i);
             try {
-                ReActResult rr = reActEngine.run(config, rolePreamble, task, finalSchema, tools, maxSteps);
+                ReActResult rr = reActEngine.run(config, rolePreamble, task, finalSchema,
+                        tools, toolDescriptions, maxSteps);
                 v.setReactSteps(rr.getSteps());
                 JsonNode node = JsonExtractor.extract(objectMapper, rr.getFinalAnswer());
                 if (node != null) {

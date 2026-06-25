@@ -69,7 +69,8 @@ export default function PredictionPage() {
       <p className="page-desc">
         <strong>RAG + 思维树(ToT) + ReAct + 多轮投票</strong>：先从知识库检索该标的的历史理财与核心波动资料 →
         思维链拆分维度 → 思维树多分支展开 → 多轮 ReAct(思考-行动-观察, 可调用 RAG/新闻工具)独立裁决 →
-        多数派占比超过 60% 才确认结论。
+        多数派占比超过 60% 才确认结论。其中 ReAct <strong>优先使用模型原生 function-calling</strong>，
+        若模型不支持则自动回退到手动推理模式。
       </p>
 
       {err && <div className="alert error">{err}</div>}
