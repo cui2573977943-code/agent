@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "profiles": [
+    {
+      "difficulty_id": "story",
+      "display_name": "故事",
+      "description": "适合剧情优先玩家。敌方 AI 会保留明显失误空间，玩家拥有完整预览和撤销辅助。",
+      "max_actions_evaluated": 3,
+      "coordination_limit": 1,
+      "prediction_depth": 0,
+      "can_capture_altars": false,
+      "can_execute_low_hp": false,
+      "can_use_terrain_memory": false,
+      "can_use_overdraw_magic": false,
+      "can_modify_terrain": false,
+      "intent_visibility": "full_arrows",
+      "player_assists": [
+        "damage_preview",
+        "undo_move",
+        "full_enemy_intent",
+        "danger_zone"
+      ],
+      "utility_weights": {
+        "kill_potential": 0.45,
+        "objective_control": 0.2,
+        "terrain_value": 0.2,
+        "formation_break": 0.15,
+        "survival": 0.8,
+        "risk_exposure": 1.1
+      }
+    },
+    {
+      "difficulty_id": "normal",
+      "display_name": "普通",
+      "description": "标准体验。敌方会利用目标点和地形，但不会做长线预测。",
+      "max_actions_evaluated": 8,
+      "coordination_limit": 2,
+      "prediction_depth": 0,
+      "can_capture_altars": true,
+      "can_execute_low_hp": true,
+      "can_use_terrain_memory": true,
+      "can_use_overdraw_magic": false,
+      "can_modify_terrain": false,
+      "intent_visibility": "intent_icons",
+      "player_assists": [
+        "damage_preview",
+        "intent_icons",
+        "danger_zone"
+      ],
+      "utility_weights": {
+        "kill_potential": 1.0,
+        "objective_control": 0.8,
+        "terrain_value": 0.7,
+        "formation_break": 0.8,
+        "survival": 0.9,
+        "risk_exposure": 0.7
+      }
+    },
+    {
+      "difficulty_id": "hard",
+      "display_name": "困难",
+      "description": "战术压力较高。敌方会协同破阵线，并主动利用地形记忆。",
+      "max_actions_evaluated": 15,
+      "coordination_limit": 3,
+      "prediction_depth": 1,
+      "can_capture_altars": true,
+      "can_execute_low_hp": true,
+      "can_use_terrain_memory": true,
+      "can_use_overdraw_magic": true,
+      "can_modify_terrain": false,
+      "intent_visibility": "danger_zone_only",
+      "player_assists": [
+        "danger_zone"
+      ],
+      "utility_weights": {
+        "kill_potential": 1.15,
+        "objective_control": 1.0,
+        "terrain_value": 0.95,
+        "formation_break": 1.25,
+        "survival": 0.8,
+        "risk_exposure": 0.55
+      }
+    },
+    {
+      "difficulty_id": "nightmare",
+      "display_name": "噩梦",
+      "description": "完整 AI 能力。敌方会预测玩家行动、使用透支与地形改造，不显示意图辅助。",
+      "max_actions_evaluated": null,
+      "coordination_limit": 99,
+      "prediction_depth": 2,
+      "can_capture_altars": true,
+      "can_execute_low_hp": true,
+      "can_use_terrain_memory": true,
+      "can_use_overdraw_magic": true,
+      "can_modify_terrain": true,
+      "intent_visibility": "hidden",
+      "player_assists": [],
+      "utility_weights": {
+        "kill_potential": 1.35,
+        "objective_control": 1.2,
+        "terrain_value": 1.1,
+        "formation_break": 1.4,
+        "survival": 0.75,
+        "risk_exposure": 0.45
+      }
+    }
+  ]
+}
