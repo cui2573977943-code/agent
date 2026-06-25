@@ -18,19 +18,17 @@ var move_range := 4
 var attack_range := 1
 var acted := false
 
-static func from_level_entry(entry: Dictionary, team_name: String) -> TacticalUnit:
-	var unit := TacticalUnit.new()
-	unit.unit_id = entry.get("id", "")
-	unit.display_name = entry.get("display_name", unit.unit_id)
-	unit.team = team_name
-	unit.class_id = entry.get("class_id", "")
-	unit.element = entry.get("element", "steel")
-	unit.level = int(entry.get("level", 1))
+func configure_from_level_entry(entry: Dictionary, team_name: String) -> void:
+	unit_id = entry.get("id", "")
+	display_name = entry.get("display_name", unit_id)
+	team = team_name
+	class_id = entry.get("class_id", "")
+	element = entry.get("element", "steel")
+	level = int(entry.get("level", 1))
 
 	var spawn: Array = entry.get("spawn", [0, 0])
-	unit.grid_position = Vector2i(int(spawn[0]), int(spawn[1]))
-	unit._apply_class_defaults()
-	return unit
+	grid_position = Vector2i(int(spawn[0]), int(spawn[1]))
+	_apply_class_defaults()
 
 func _apply_class_defaults() -> void:
 	match class_id:
@@ -91,7 +89,7 @@ func can_act() -> bool:
 	return is_alive() and not acted
 
 func receive_damage(amount: int) -> int:
-	var applied := max(0, amount)
+	var applied: int = max(0, amount)
 	hp = max(0, hp - applied)
 	return applied
 

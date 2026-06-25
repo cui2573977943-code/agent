@@ -27,7 +27,7 @@ func neighbors(cell: Vector2i) -> Array[Vector2i]:
 		Vector2i.UP
 	]
 	for direction in directions:
-		var next := cell + direction
+		var next: Vector2i = cell + direction
 		if is_inside(next) and not is_blocked(next):
 			result.append(next)
 	return result

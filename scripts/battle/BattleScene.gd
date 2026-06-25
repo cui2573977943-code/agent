@@ -47,13 +47,17 @@ func _load_units_from_level(data: Dictionary) -> void:
 	enemy_units.clear()
 
 	for entry in data.get("player_units", []):
-		player_units.append(TacticalUnitScript.from_level_entry(entry, "player"))
+		var player_unit = TacticalUnitScript.new()
+		player_unit.configure_from_level_entry(entry, "player")
+		player_units.append(player_unit)
 
 	for wave in data.get("enemy_waves", []):
 		if int(wave.get("turn", 1)) != 1:
 			continue
 		for entry in wave.get("units", []):
-			enemy_units.append(TacticalUnitScript.from_level_entry(entry, "enemy"))
+			var enemy_unit = TacticalUnitScript.new()
+			enemy_unit.configure_from_level_entry(entry, "enemy")
+			enemy_units.append(enemy_unit)
 
 func _handle_left_click(cell: Vector2i) -> void:
 	if not turn_manager.is_player_phase():
@@ -97,7 +101,7 @@ func _clear_selection() -> void:
 
 func _attack(attacker, defender) -> void:
 	var element_bonus := _element_damage_bonus(attacker.element, defender.element)
-	var damage := max(1, attacker.power + element_bonus - defender.defense)
+	var damage: int = max(1, int(attacker.power) + element_bonus - int(defender.defense))
 	var applied: int = defender.receive_damage(damage)
 	_add_log("%s 攻击 %s，造成 %d 伤害。" % [attacker.display_name, defender.display_name, applied])
 	if not defender.is_alive():
@@ -141,7 +145,7 @@ func _run_enemy_turn() -> void:
 			_attack(enemy, nearest)
 		else:
 			var occupied := _occupied_cells_for_movement(enemy)
-			var steps := enemy.move_range
+			var steps: int = int(enemy.move_range)
 			while steps > 0:
 				var next: Vector2i = grid.find_step_toward(enemy.grid_position, nearest.grid_position, occupied)
 				if next == enemy.grid_position:
