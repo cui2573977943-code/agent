@@ -122,6 +122,9 @@ AI 难度必须支持：
   "can_capture_altars": true,
   "can_execute_low_hp": true,
   "can_use_terrain_memory": true,
+  "can_use_overdraw_magic": false,
+  "can_modify_terrain": false,
+  "intent_visibility": "intent_icons",
   "player_assists": ["damage_preview", "intent_icons"],
   "utility_weights": {
     "kill_potential": 1.0,
@@ -135,7 +138,7 @@ AI 难度必须支持：
 
 ## 核心战斗公式
 实现时必须保留可调参数：
-- 命中率 = attacker.hit + weapon.hit + terrain.hit_mod - defender.avoid - terrain.avoid_mod。
+- 命中率 = attacker.hit + weapon.hit - defender.avoid + terrain.hit_mod + terrain.avoid_mod。`terrain.avoid_mod` 可以为负值，例如古战场雾为 -15，表示最终命中降低 15。
 - 伤害 = max(0, attacker.power + weapon.power + element_bonus - defender.defense - terrain.defense_mod)。
 - 四象克制倍率：优势 1.2，劣势 0.85，中性 1.0。
 - 阵线防御：有效阵线中单位受到伤害降低 30%。
@@ -212,6 +215,8 @@ Baroque oil painting, Rembrandt chiaroscuro, visible brushstrokes, impasto textu
 阶段 8：油画 shader、UI 画框、占位资产替换规范。
 阶段 9：CH01_L04 到 CH01_L08，含 Boss 与画布裂隙。
 阶段 10：平衡性、存档、设置、Web/PC 导出说明。
+
+阶段 1 的敌方行动只允许作为最小可玩占位逻辑：向最近玩家单位移动，若已在攻击范围内则攻击。不要在阶段 1 提前实现完整 Utility AI；完整 AI 留到阶段 5。
 
 ## 每阶段输出格式
 每阶段完成后必须输出：

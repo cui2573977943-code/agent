@@ -95,6 +95,7 @@ flowchart LR
   "display_name": "古战场雾",
   "move_cost": { "infantry": 1, "cavalry": 2, "flyer": 1 },
   "defense_mod": 10,
+  "hit_mod": 0,
   "avoid_mod": -15,
   "crit_mod": 10,
   "element_affinity": "steel",
@@ -134,6 +135,15 @@ score = w1*killPotential + w2*objectiveControl + w3*terrainValue
 | 普通 | 评估前 8 动作；协同 2 单位；可抢目标点 | 伤害预览、意图图标 |
 | 困难 | 评估前 15 动作；协同 3 单位；利用地形记忆 | 危险区 |
 | 噩梦 | 不裁剪；预测 2 步；可用透支和地形改造 | 无辅助 |
+
+公式约定：
+
+```text
+hit_chance = attacker.hit + weapon.hit - defender.avoid + terrain.hit_mod + terrain.avoid_mod
+damage = max(0, attacker.power + weapon.power + element_bonus - defender.defense - terrain.defense_mod)
+```
+
+其中 `terrain.avoid_mod` 可为负值；古战场雾使用 `avoid_mod = -15` 表示最终命中降低 15。
 
 ## 11. 第一章关卡表
 

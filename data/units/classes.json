@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "classes": [
+    {
+      "class_id": "bladeguard",
+      "display_name": "刃卫",
+      "element": "flame",
+      "role": "高机动突击",
+      "base_stats": {
+        "max_hp": 22,
+        "power": 7,
+        "defense": 3,
+        "hit": 88,
+        "avoid": 12,
+        "move_range": 5,
+        "attack_range": 1
+      },
+      "signature_rule": "处决窗口：攻击 HP 低于 30% 的敌人时可追击。"
+    },
+    {
+      "class_id": "ranger",
+      "display_name": "游侠",
+      "element": "verdant",
+      "role": "远程和陷阱",
+      "base_stats": {
+        "max_hp": 18,
+        "power": 5,
+        "defense": 2,
+        "hit": 82,
+        "avoid": 14,
+        "move_range": 5,
+        "attack_range": 2
+      },
+      "signature_rule": "地形共鸣：在森林和山地获得额外移动。"
+    },
+    {
+      "class_id": "spearwall",
+      "display_name": "枪阵军",
+      "element": "steel",
+      "role": "前排控场",
+      "base_stats": {
+        "max_hp": 20,
+        "power": 5,
+        "defense": 4,
+        "hit": 80,
+        "avoid": 4,
+        "move_range": 3,
+        "attack_range": 1
+      },
+      "signature_rule": "阵线值：相邻 2 名友军时防御提升。"
+    },
+    {
+      "class_id": "scout",
+      "display_name": "斥候",
+      "element": "tide",
+      "role": "情报和扰乱",
+      "base_stats": {
+        "max_hp": 16,
+        "power": 4,
+        "defense": 1,
+        "hit": 78,
+        "avoid": 16,
+        "move_range": 5,
+        "attack_range": 1
+      },
+      "signature_rule": "迷雾穿透：揭示敌方下回合意图。"
+    },
+    {
+      "class_id": "mage",
+      "display_name": "魔导士",
+      "element": "flame",
+      "role": "范围法术",
+      "base_stats": {
+        "max_hp": 15,
+        "power": 6,
+        "defense": 1,
+        "hit": 76,
+        "avoid": 6,
+        "move_range": 4,
+        "attack_range": 2
+      },
+      "signature_rule": "以太透支：消耗 HP 强化法术，下回合眩晕。"
+    }
+  ]
+}

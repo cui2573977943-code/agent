@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "terrains": [
+    {
+      "terrain_id": "plain",
+      "display_name": "平原",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 0,
+      "element_affinity": "none",
+      "dynamic_tags": [],
+      "elevation": 0,
+      "cover_type": "none",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "none",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "forest",
+      "display_name": "森林",
+      "move_cost": {
+        "infantry": 2,
+        "cavalry": 3,
+        "flyer": 1
+      },
+      "defense_mod": 1,
+      "hit_mod": 0,
+      "avoid_mod": 10,
+      "crit_mod": 0,
+      "element_affinity": "verdant",
+      "dynamic_tags": [],
+      "elevation": 0,
+      "cover_type": "partial",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "none",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "stone_bridge",
+      "display_name": "石桥",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": -5,
+      "crit_mod": 0,
+      "element_affinity": "steel",
+      "dynamic_tags": [],
+      "elevation": 1,
+      "cover_type": "none",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "bridge",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "canvas_rift",
+      "display_name": "画布裂隙",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 10,
+      "element_affinity": "flame",
+      "dynamic_tags": ["story_trigger"],
+      "elevation": 0,
+      "cover_type": "none",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "story_rift",
+        "hp": 0,
+        "destructible": false
+      }
+    }
+  ]
+}

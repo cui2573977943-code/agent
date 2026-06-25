@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "dialogue_id": "ch01_l01",
+  "level_id": "CH01_L01",
+  "nodes": {
+    "dialogue_ch01_l01_pre": [
+      {
+        "speaker": "Elara",
+        "text": "灰桥不该有王旗。Varen 的人先到了。"
+      },
+      {
+        "speaker": "Kael",
+        "text": "桥头有枪兵，林边有斥候。先别把背交给雾。"
+      },
+      {
+        "speaker": "Elara",
+        "text": "我只要穿过这里，夺回石阵。"
+      }
+    ],
+    "dialogue_ch01_l01_kael_arrives": [
+      {
+        "speaker": "Kael",
+        "text": "我从北岸绕回来了。弓还在，路也还在。"
+      }
+    ],
+    "dialogue_ch01_l01_rift": [
+      {
+        "speaker": "Elara",
+        "text": "这不是雾。是画布裂开了。"
+      },
+      {
+        "speaker": "Unknown Voice",
+        "text": "别信金冠之人的史书。"
+      }
+    ],
+    "dialogue_ch01_l01_victory": [
+      {
+        "speaker": "Elara",
+        "text": "桥归我们了。但那道裂隙还在看着我。"
+      },
+      {
+        "speaker": "Kael",
+        "text": "那就别让它白看。去圣痕石阵。"
+      }
+    ]
+  }
+}
