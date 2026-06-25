@@ -15,6 +15,9 @@ flowchart TD
     BattleScript --> Preview[CombatPreviewPanel.gd]
     CombatFormula --> ElementAffinity[ElementAffinity.gd]
     CombatFormula --> WeaponData[WeaponData.gd]
+    BattleScript --> FormationSystem[FormationSystem.gd]
+    BattleScript --> MoraleSystem[MoraleSystem.gd]
+    BattleScript --> ClassAbility[ClassAbility.gd]
     GameManager --> LevelJson[CH01_L01.json]
     GameManager --> DifficultyJson[difficulty_profiles.json]
     GameManager --> ClassJson[classes.json]
@@ -33,6 +36,9 @@ flowchart TD
 - `scripts/battle/ElementAffinity.gd`：四象阵克制关系与倍率。
 - `scripts/battle/WeaponData.gd`：武器默认值和范围辅助。
 - `scripts/battle/CombatFormula.gd`：命中、暴击、伤害、经验奖励字段。
+- `scripts/battle/FormationSystem.gd`：横向/纵向 3 连单位阵线判定与 0.7 伤害倍率。
+- `scripts/battle/MoraleSystem.gd`：玩家/敌方士气与负士气命中修正。
+- `scripts/battle/ClassAbility.gd`：职业能力入口，当前接入刃卫处决窗口。
 - `scripts/map/GridMap.gd`：网格范围、曼哈顿距离、移动范围和占位寻路。
 - `scripts/ui/CombatPreviewPanel.gd`：将战斗预览数据格式化为 HUD 文本。
 - `scenes/battle/BattleScene.tscn`：最小主场景。
@@ -52,6 +58,7 @@ flowchart TD
 - `data/ai/difficulty_profiles.json`
 - `data/units/classes.json`
 - `data/units/weapons.json`
+- `data/units/supports.json`
 
 `data/terrains/base_terrains.json` 已提供给后续阶段使用。当前战斗公式支持 terrain 参数，但场景还没有把 TileMap 地形传入公式。
 

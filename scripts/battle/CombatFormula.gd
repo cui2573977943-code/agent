@@ -10,9 +10,11 @@ static func preview(attacker, defender, raw_weapon: Dictionary, terrain := {}) -
 	var terrain_avoid_mod: int = int(terrain.get("avoid_mod", 0))
 	var terrain_defense_mod: int = int(terrain.get("defense_mod", 0))
 	var terrain_crit_mod: int = int(terrain.get("crit_mod", 0))
+	var bonus_damage: int = int(terrain.get("bonus_damage", 0))
+	var damage_taken_multiplier: float = float(terrain.get("damage_taken_multiplier", 1.0))
 	var element_multiplier: float = ElementAffinityScript.multiplier(attacker.element, defender.element)
-	var base_damage: int = max(0, int(attacker.power) + int(weapon.get("power", 0)) - int(defender.defense) - terrain_defense_mod)
-	var final_damage: int = max(1, int(round(float(base_damage) * element_multiplier)))
+	var base_damage: int = max(0, int(attacker.power) + int(weapon.get("power", 0)) + bonus_damage - int(defender.defense) - terrain_defense_mod)
+	var final_damage: int = max(1, int(round(float(base_damage) * element_multiplier * damage_taken_multiplier)))
 	var hit_chance: int = clamp(int(attacker.hit) + int(weapon.get("hit", 0)) - int(defender.avoid) + terrain_hit_mod + terrain_avoid_mod, 0, 100)
 	var crit_chance: int = clamp(int(weapon.get("crit", 0)) + terrain_crit_mod, 0, 100)
 
@@ -24,6 +26,8 @@ static func preview(attacker, defender, raw_weapon: Dictionary, terrain := {}) -
 		"crit_chance": crit_chance,
 		"element_state": ElementAffinityScript.label(attacker.element, defender.element),
 		"element_multiplier": element_multiplier,
+		"damage_taken_multiplier": damage_taken_multiplier,
+		"bonus_damage": bonus_damage,
 		"experience_on_hit": int(weapon.get("experience_on_hit", 10)),
 		"experience_on_kill": int(weapon.get("experience_on_kill", 35))
 	}

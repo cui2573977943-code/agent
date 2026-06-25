@@ -115,6 +115,75 @@
         "avoid": 30
       },
       "signature_rule": "以太透支：消耗 HP 强化法术，下回合眩晕。"
+    },
+    {
+      "class_id": "druid",
+      "display_name": "德鲁伊",
+      "element": "verdant",
+      "role": "辅助变形",
+      "base_stats": {
+        "max_hp": 19,
+        "power": 4,
+        "defense": 3,
+        "hit": 78,
+        "avoid": 10,
+        "move_range": 4,
+        "attack_range": 1
+      },
+      "growth_rates": {
+        "max_hp": 65,
+        "power": 35,
+        "defense": 40,
+        "hit": 40,
+        "avoid": 45
+      },
+      "signature_rule": "形态切换：熊、鹰、藤三形态。"
+    },
+    {
+      "class_id": "priest",
+      "display_name": "祭司",
+      "element": "tide",
+      "role": "治疗和结界",
+      "base_stats": {
+        "max_hp": 17,
+        "power": 4,
+        "defense": 2,
+        "hit": 80,
+        "avoid": 8,
+        "move_range": 4,
+        "attack_range": 1
+      },
+      "growth_rates": {
+        "max_hp": 55,
+        "power": 45,
+        "defense": 25,
+        "hit": 55,
+        "avoid": 35
+      },
+      "signature_rule": "圣域铺设：每关限 2 次无敌区域。"
+    },
+    {
+      "class_id": "engineer",
+      "display_name": "工程兵",
+      "element": "steel",
+      "role": "器械和建造",
+      "base_stats": {
+        "max_hp": 21,
+        "power": 5,
+        "defense": 4,
+        "hit": 75,
+        "avoid": 5,
+        "move_range": 4,
+        "attack_range": 1
+      },
+      "growth_rates": {
+        "max_hp": 70,
+        "power": 40,
+        "defense": 45,
+        "hit": 35,
+        "avoid": 25
+      },
+      "signature_rule": "战场改造：修桥、设障、破墙。"
     }
   ]
 }

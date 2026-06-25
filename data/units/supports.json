@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "supports": [
+    {
+      "support_id": "elara_kael",
+      "unit_a": "lord_elara",
+      "unit_b": "ranger_kael",
+      "affinity": 1,
+      "max_affinity": 3,
+      "combat_bonus_by_affinity": {
+        "1": {
+          "hit": 5
+        },
+        "2": {
+          "hit": 5,
+          "avoid": 5,
+          "joint_strike": true
+        },
+        "3": {
+          "hit": 10,
+          "avoid": 5,
+          "joint_strike": true
+        }
+      },
+      "dialogue_hooks": {
+        "2": "support_elara_kael_b",
+        "3": "support_elara_kael_a"
+      }
+    }
+  ]
+}

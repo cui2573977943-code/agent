@@ -6,6 +6,9 @@ const TacticalGridMapScript := preload("res://scripts/map/GridMap.gd")
 const CombatFormulaScript := preload("res://scripts/battle/CombatFormula.gd")
 const WeaponDataScript := preload("res://scripts/battle/WeaponData.gd")
 const CombatPreviewPanelScript := preload("res://scripts/ui/CombatPreviewPanel.gd")
+const FormationSystemScript := preload("res://scripts/battle/FormationSystem.gd")
+const MoraleSystemScript := preload("res://scripts/battle/MoraleSystem.gd")
+const ClassAbilityScript := preload("res://scripts/battle/ClassAbility.gd")
 
 var grid := TacticalGridMapScript.new(BattleManager.GRID_WIDTH, BattleManager.GRID_HEIGHT)
 var turn_manager := TurnManagerScript.new()
@@ -17,12 +20,13 @@ var attack_cells: Array[Vector2i] = []
 var current_preview: Dictionary = {}
 var log_messages: Array[String] = []
 var level_data: Dictionary = {}
+var morale_system := MoraleSystemScript.new()
 
 func _ready() -> void:
 	level_data = GameManager.load_level()
 	_load_units_from_level(level_data)
 	turn_manager.start_player_turn(player_units)
-	_add_log("阶段 2：选择单位，移动后攻击；HUD 显示武器、命中、暴击与克制预览。")
+	_add_log("阶段 3：阵线减伤、士气和刃卫处决窗口已启用。")
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -108,18 +112,27 @@ func _clear_selection() -> void:
 
 func _attack(attacker, defender) -> void:
 	var weapon := _weapon_for(attacker)
-	var result: Dictionary = CombatFormulaScript.resolve(attacker, defender, weapon)
+	var defender_was_in_formation := FormationSystemScript.is_unit_in_formation(defender, player_units + enemy_units)
+	var combat_context := _combat_context(attacker, defender)
+	var result: Dictionary = CombatFormulaScript.resolve(attacker, defender, weapon, combat_context)
 	if result.get("did_hit", false):
 		var crit_text := ""
 		if result.get("did_crit", false):
 			crit_text = " 暴击！"
 		_add_log("%s 用 %s 攻击 %s，造成 %d 伤害。%s" % [attacker.display_name, result["weapon_name"], defender.display_name, int(result["applied_damage"]), crit_text])
+		if defender_was_in_formation:
+			_add_log("%s 受到阵线保护，伤害降低。" % defender.display_name)
+		if int(result.get("bonus_damage", 0)) > 0:
+			_add_log("%s 触发 %s。" % [attacker.display_name, ClassAbilityScript.signature_label(attacker.class_id)])
 		_award_experience(attacker, int(result["experience_on_hit"]))
 	else:
 		_add_log("%s 攻击 %s，但未命中。" % [attacker.display_name, defender.display_name])
 	if result.get("defender_defeated", false):
 		_add_log("%s 被击败。" % defender.display_name)
 		_award_experience(attacker, int(result["experience_on_kill"]))
+		if defender_was_in_formation:
+			var new_morale: int = morale_system.adjust(defender.team, -1)
+			_add_log("%s 阵线被突破，士气变为 %d。" % [defender.team, new_morale])
 
 func _award_experience(unit, amount: int) -> void:
 	if unit.team != "player":
@@ -241,6 +254,13 @@ func _weapon_for(unit) -> Dictionary:
 		return WeaponDataScript.default_weapon()
 	return weapon
 
+func _combat_context(attacker, defender) -> Dictionary:
+	return {
+		"damage_taken_multiplier": FormationSystemScript.damage_taken_multiplier(defender, player_units + enemy_units),
+		"bonus_damage": ClassAbilityScript.execution_bonus_damage(attacker, defender),
+		"hit_mod": morale_system.hit_modifier(attacker.team)
+	}
+
 func _is_in_attack_range(attacker, defender) -> bool:
 	var weapon := _weapon_for(attacker)
 	var distance := grid.distance(attacker.grid_position, defender.grid_position)
@@ -257,7 +277,7 @@ func _update_preview_for_selected() -> void:
 	var distance := grid.distance(selected_unit.grid_position, target.grid_position)
 	if distance < WeaponDataScript.min_range(weapon) or distance > WeaponDataScript.max_range(weapon):
 		return
-	current_preview = CombatFormulaScript.preview(selected_unit, target, weapon)
+	current_preview = CombatFormulaScript.preview(selected_unit, target, weapon, _combat_context(selected_unit, target))
 
 func screen_to_grid(position: Vector2) -> Vector2i:
 	return Vector2i(floori(position.x / BattleManager.TILE_SIZE), floori(position.y / BattleManager.TILE_SIZE))
@@ -312,8 +332,9 @@ func _draw_hud() -> void:
 
 	draw_string(ThemeDB.fallback_font, Vector2(x, y), "第 %d 回合 - %s" % [turn_manager.turn_number, phase_text], HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.95, 0.84, 0.52))
 	draw_string(ThemeDB.fallback_font, Vector2(x, y + 34), "Enter: 结束回合  Space: 等待  Esc: 取消", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.78, 0.62))
+	draw_string(ThemeDB.fallback_font, Vector2(x, y + 56), "士气 玩家:%d 敌方:%d" % [morale_system.value("player"), morale_system.value("enemy")], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.78, 0.62))
 
-	var line_y := y + 80
+	var line_y := y + 102
 	if not current_preview.is_empty():
 		draw_string(ThemeDB.fallback_font, Vector2(x, line_y), "战斗预览: %s" % CombatPreviewPanelScript.summary(current_preview), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.95, 0.84, 0.52))
 		line_y += 28
