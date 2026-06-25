@@ -194,9 +194,43 @@ CREATE TABLE salary_record (
     UNIQUE KEY uk_month (month)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工资记录表';
 
+-- ---------------------------------------------------------------------
+-- 10. 用户财务档案表(单条记录, 维护可编辑的现金余额等)
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS user_profile;
+CREATE TABLE user_profile (
+    id              BIGINT          NOT NULL AUTO_INCREMENT COMMENT '主键',
+    cash_balance    DECIMAL(18,2)   NOT NULL DEFAULT 0 COMMENT '现金余额',
+    monthly_income  DECIMAL(18,2)   DEFAULT NULL COMMENT '月收入(可选, 覆盖工资记录)',
+    monthly_expense DECIMAL(18,2)   DEFAULT NULL COMMENT '月支出(可选)',
+    risk_preference VARCHAR(16)     DEFAULT NULL COMMENT '风险偏好 CONSERVATIVE/BALANCED/AGGRESSIVE',
+    note            VARCHAR(500)    DEFAULT NULL COMMENT '备注',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户财务档案表';
+
+-- ---------------------------------------------------------------------
+-- 11. 理财分析报告表(一键汇总 / 建议结果)
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS advisor_report;
+CREATE TABLE advisor_report (
+    id              BIGINT          NOT NULL AUTO_INCREMENT COMMENT '主键',
+    type            VARCHAR(16)     NOT NULL COMMENT '类型 SUMMARY汇总 / ADVICE建议',
+    intention       VARCHAR(1000)   DEFAULT NULL COMMENT '用户理财意向(ADVICE)',
+    metrics         LONGTEXT        DEFAULT NULL COMMENT '关键财务指标(JSON)',
+    content         LONGTEXT        DEFAULT NULL COMMENT 'AI 分析结果(JSON)',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (id),
+    KEY idx_type (type),
+    KEY idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='理财分析报告表';
+
 -- =====================================================================
 -- 初始化示例数据(可选)
 -- =====================================================================
+INSERT INTO user_profile (cash_balance, monthly_income, monthly_expense, risk_preference, note)
+VALUES (50000.00, 20000.00, 8000.00, 'BALANCED', '示例财务档案');
 INSERT INTO asset (code, name, type, market, latest_price, prev_close, change_pct)
 VALUES
     ('510300', '沪深300ETF', 'FUND', 'SH', 3.8520, 3.8210, 0.8113),

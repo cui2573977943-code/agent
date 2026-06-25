@@ -1,9 +1,9 @@
 # AI 理财投资助手（Tree-of-Thought AI Agent）
 
-一个全栈的 AI 投资/理财助手：管理自选股票/基金、记录买卖并实时计算历史盈亏；通过**思维树（Tree-of-Thought）AI Agent**预测单只标的涨跌并给出增持/减持建议；输入工资由 AI 规划如何理财（保守/均衡/激进）。
+一个全栈的 AI 投资/理财助手：管理自选股票/基金、记录买卖并实时计算历史盈亏；通过**思维树（Tree-of-Thought）AI Agent**预测单只标的涨跌并给出增持/减持建议；输入工资由 AI 规划如何理财（保守/均衡/激进）；还能基于收入、余额与理财盈亏一键汇总分析，并结合财经新闻与用户意向给出可视化的理财建议。
 
 - 前端：React 18 + Vite
-- 后端：Spring Boot 3（Java 21）
+- 后端：Spring Boot 3（Java 21），**AI 部分基于 [LangChain4j](https://github.com/langchain4j/langchain4j) 1.16.2**
 - 数据库：MySQL 8（附建表脚本）
 
 ---
@@ -25,6 +25,14 @@
 4. **AI 理财规划（思维树 + 多轮验证）**
    - 同样先思维链拆分，再结合**历史理财盈亏**选择**保守/均衡/激进**风格（历史盈利→可更激进，历史亏损→更保守）；
    - 多轮验证确定风格后，给出应急金、可投资金额，以及**买哪个基金/原有持仓增持或减持**的落地方案。
+5. **理财分析与建议（新增）**
+   - 维护可编辑的**现金余额**与收入/支出档案；
+   - **一键汇总分析**：后端精确计算净资产、投资市值、盈亏、储蓄率等指标，AI 负责文字解读与关键发现、健康分；
+   - **意向建议**：结合财务汇总、**爬取的财经新闻**与**用户填写的理财意向**，输出健康分、风险等级、优势/风险、资产配置（当前→建议）、行动清单与新闻洞察，前端可视化展示。
+
+### AI 实现说明（LangChain4j）
+
+所有 AI 调用统一经由 `AiClient`（`service/ai/AiClient.java`），其内部使用 **LangChain4j** 的 `OpenAiChatModel` 按用户在页面填写的 `url/key/model` **动态构建**模型并缓存，对上层 Agent 屏蔽实现细节。因此预测、理财规划、理财分析三类 Agent 均运行在 LangChain4j 之上，可对接任意 OpenAI 兼容服务。
 
 ---
 
@@ -121,6 +129,10 @@ npm run dev
 | GET | `/predictions` | 历史预测记录 |
 | POST | `/finance/plan` | 生成理财规划 |
 | GET/POST | `/finance/salary` | 工资记录 |
+| GET/POST | `/advisor/profile` | 财务档案(现金余额等) |
+| POST | `/advisor/summary` | 一键汇总分析理财信息 |
+| POST | `/advisor/advice` | 基于新闻与意向的理财建议 |
+| GET | `/advisor/reports` | 历史分析报告 |
 
 ---
 

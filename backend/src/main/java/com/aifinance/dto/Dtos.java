@@ -63,6 +63,24 @@ public final class Dtos {
         private BigDecimal expense;
     }
 
+    /** 财务档案(余额等)请求 */
+    @Data
+    public static class ProfileRequest {
+        private BigDecimal cashBalance;
+        private BigDecimal monthlyIncome;
+        private BigDecimal monthlyExpense;
+        private String riskPreference;
+        private String note;
+    }
+
+    /** 理财建议请求(用户意向) */
+    @Data
+    public static class AdviceRequest {
+        private String intention;
+        /** 是否抓取财经新闻 */
+        private Boolean fetchNews = true;
+    }
+
     /** 工资记录请求 */
     @Data
     public static class SalaryRequest {

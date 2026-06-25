@@ -3,9 +3,11 @@ import Dashboard from './pages/Dashboard.jsx'
 import AiConfigPage from './pages/AiConfigPage.jsx'
 import PredictionPage from './pages/PredictionPage.jsx'
 import FinancePlanPage from './pages/FinancePlanPage.jsx'
+import AdvisorPage from './pages/AdvisorPage.jsx'
 
 const nav = [
   { to: '/dashboard', icon: '📊', label: '资产看板' },
+  { to: '/advisor', icon: '🧭', label: '理财分析与建议' },
   { to: '/prediction', icon: '🔮', label: 'AI 涨势预测' },
   { to: '/finance', icon: '💡', label: 'AI 理财规划' },
   { to: '/config', icon: '⚙️', label: 'AI 配置' },
@@ -32,6 +34,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/advisor" element={<AdvisorPage />} />
           <Route path="/prediction" element={<PredictionPage />} />
           <Route path="/finance" element={<FinancePlanPage />} />
           <Route path="/config" element={<AiConfigPage />} />

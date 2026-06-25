@@ -51,6 +51,13 @@ export const api = {
   financePlans: () => http.get('/finance/plans'),
   saveSalary: (data) => http.post('/finance/salary', data),
   salaryHistory: () => http.get('/finance/salary'),
+
+  // 理财分析与建议
+  getProfile: () => http.get('/advisor/profile'),
+  saveProfile: (data) => http.post('/advisor/profile', data),
+  advisorSummary: () => http.post('/advisor/summary'),
+  advisorAdvice: (intention, fetchNews) => http.post('/advisor/advice', { intention, fetchNews }),
+  advisorReports: (type) => http.get('/advisor/reports', { params: type ? { type } : {} }),
 }
 
 export default api
