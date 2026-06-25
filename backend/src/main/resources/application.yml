@@ -1,0 +1,66 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: ai-finance-agent
+  # 默认使用 MySQL。若本地未安装 MySQL, 可用 --spring.profiles.active=h2 启动内存库
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/ai_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+# AI Agent 相关参数
+agent:
+  prediction:
+    rounds: 5                 # 多轮判断轮数
+    confidence-threshold: 0.6 # 超过 60% 才确认最终结果
+    branches: 3               # 思维树每层分支数
+  finance:
+    rounds: 5
+    confidence-threshold: 0.6
+  crawler:
+    enabled: true
+    timeout-ms: 6000
+    max-news: 5
+
+logging:
+  level:
+    com.aifinance: INFO
+
+---
+# H2 内存库 profile, 用于无 MySQL 环境快速验证
+spring:
+  config:
+    activate:
+      on-profile: h2
+  datasource:
+    url: jdbc:h2:mem:ai_finance;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
