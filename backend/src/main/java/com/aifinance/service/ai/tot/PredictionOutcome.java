@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 预测 Agent 的产出。
@@ -37,6 +38,9 @@ public class PredictionOutcome {
 
     /** 每轮投票明细 */
     private List<VoteResult> votes = new ArrayList<>();
+
+    /** RAG 检索到的相关资料(历史理财 + 核心波动) */
+    private List<Map<String, Object>> ragSnippets = new ArrayList<>();
 
     /** 最终推理说明 */
     private String reasoning;

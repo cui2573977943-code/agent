@@ -14,6 +14,8 @@ export default function Dashboard() {
 
   const [assetForm, setAssetForm] = useState({ code: '', name: '', type: 'FUND', market: 'SH', latestPrice: '' })
   const [tradeForm, setTradeForm] = useState({ assetId: '', type: 'BUY', shares: '', price: '', fee: '0', tradeDate: '' })
+  const [priceForm, setPriceForm] = useState({ assetId: '', text: '' })
+  const [priceMsg, setPriceMsg] = useState(null)
 
   const loadAll = async () => {
     try {
@@ -28,6 +30,7 @@ export default function Dashboard() {
       setSummary(s)
       setTxns(t)
       if (a.length && !tradeForm.assetId) setTradeForm((f) => ({ ...f, assetId: a[0].id }))
+      if (a.length && !priceForm.assetId) setPriceForm((f) => ({ ...f, assetId: a[0].id }))
     } catch (e) {
       setErr(e.message)
     }
@@ -64,6 +67,31 @@ export default function Dashboard() {
       })
       setTradeForm({ ...tradeForm, shares: '', price: '', fee: '0' })
       loadAll()
+    } catch (e) {
+      setErr(e.message)
+    }
+  }
+
+  const addPrices = async () => {
+    setErr(null)
+    setPriceMsg(null)
+    try {
+      const points = priceForm.text
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => {
+          const [tradeDate, close] = l.split(/[,\s]+/)
+          return { tradeDate, close: Number(close) }
+        })
+        .filter((p) => p.tradeDate && !Number.isNaN(p.close))
+      if (!points.length) {
+        setErr('请输入价格数据，每行格式：日期,收盘价（如 2026-01-02,3.70）')
+        return
+      }
+      const r = await api.addPriceHistory(Number(priceForm.assetId), points)
+      setPriceMsg(`已录入 ${r.saved} 条价格数据`)
+      setPriceForm({ ...priceForm, text: '' })
     } catch (e) {
       setErr(e.message)
     }
@@ -242,6 +270,33 @@ export default function Dashboard() {
           <div className="mt">
             <button onClick={addTrade} disabled={!tradeForm.assetId}>记录交易</button>
           </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>录入价格历史(用于核心波动分析 / RAG 知识库)</h3>
+        {priceMsg && <div className="alert ok">{priceMsg}</div>}
+        <div className="form-grid">
+          <div>
+            <label>资产</label>
+            <select value={priceForm.assetId} onChange={(e) => setPriceForm({ ...priceForm, assetId: e.target.value })}>
+              {assets.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}({a.code})</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ gridColumn: '2 / -1' }}>
+            <label>价格序列(每行：日期,收盘价)</label>
+            <textarea
+              rows={4}
+              placeholder={'2026-01-02,3.70\n2026-01-03,3.75\n2026-01-06,3.68'}
+              value={priceForm.text}
+              onChange={(e) => setPriceForm({ ...priceForm, text: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="mt">
+          <button onClick={addPrices} disabled={!priceForm.assetId}>录入价格</button>
         </div>
       </div>
 

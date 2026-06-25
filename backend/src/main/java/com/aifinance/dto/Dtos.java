@@ -81,6 +81,27 @@ public final class Dtos {
         private Boolean fetchNews = true;
     }
 
+    /** RAG 检索请求 */
+    @Data
+    public static class RagSearchRequest {
+        @NotBlank(message = "查询内容不能为空")
+        private String query;
+        private Integer maxResults = 6;
+    }
+
+    /** 价格历史录入(单点) */
+    @Data
+    public static class PricePointRequest {
+        @NotNull(message = "交易日期不能为空")
+        private LocalDate tradeDate;
+        private BigDecimal open;
+        @NotNull(message = "收盘价不能为空")
+        private BigDecimal close;
+        private BigDecimal high;
+        private BigDecimal low;
+        private Long volume;
+    }
+
     /** 工资记录请求 */
     @Data
     public static class SalaryRequest {

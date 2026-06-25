@@ -5,6 +5,10 @@ import com.aifinance.entity.AiConfig;
 import com.aifinance.service.ai.AiClient;
 import com.aifinance.service.ai.ChatMessage;
 import com.aifinance.service.ai.JsonExtractor;
+import com.aifinance.service.ai.react.ReActEngine;
+import com.aifinance.service.ai.react.ReActResult;
+import com.aifinance.service.crawler.NewsCrawlerService;
+import com.aifinance.service.rag.RagService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -15,17 +19,19 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
- * 单只股票/基金涨跌预测的 思维树(Tree of Thought) Agent。
+ * 单只股票/基金涨跌预测的 思维树(ToT) + RAG + ReAct Agent。
  *
  * <p>流程:
  * <ol>
+ *   <li>RAG 检索: 先从知识库取回该标的的历史理财与核心波动资料;</li>
  *   <li>思维链拆分(CoT): 让模型把"预测涨跌"拆分为多个分析维度;</li>
- *   <li>思维树展开(ToT): 对每个维度生成多个候选思路(分支)并打分, 结合历史信息与最新爬虫新闻;</li>
- *   <li>多轮判断: 基于完整的思维树做 N 轮独立裁决, 每轮给出 UP/DOWN 与置信度;</li>
- *   <li>聚合: 多数派占比 &gt; 阈值(默认 60%) 才确认为最终结论, 否则判为 UNCERTAIN;</li>
- *   <li>映射操作建议: UP→增持, DOWN→减持, UNCERTAIN→观望(结合当前是否持仓)。</li>
+ *   <li>思维树展开(ToT): 对每个维度生成多个候选思路(分支)并打分, 结合 RAG 资料/历史/新闻;</li>
+ *   <li>多轮 ReAct 判断: 每轮以"思考-行动-观察"循环可调用 RAG/新闻工具收集证据后裁决 UP/DOWN;</li>
+ *   <li>投票聚合: 多数派占比 &gt; 阈值(默认 60%) 才确认结论, 否则判为 UNCERTAIN;</li>
+ *   <li>映射操作建议: UP→增持, DOWN→减持, UNCERTAIN→观望。</li>
  * </ol>
  */
 @Component
@@ -36,11 +42,19 @@ public class PredictionAgent {
     private final AiClient aiClient;
     private final ObjectMapper objectMapper;
     private final AgentProperties properties;
+    private final RagService ragService;
+    private final NewsCrawlerService newsCrawlerService;
+    private final ReActEngine reActEngine;
 
-    public PredictionAgent(AiClient aiClient, ObjectMapper objectMapper, AgentProperties properties) {
+    public PredictionAgent(AiClient aiClient, ObjectMapper objectMapper, AgentProperties properties,
+                           RagService ragService, NewsCrawlerService newsCrawlerService,
+                           ReActEngine reActEngine) {
         this.aiClient = aiClient;
         this.objectMapper = objectMapper;
         this.properties = properties;
+        this.ragService = ragService;
+        this.newsCrawlerService = newsCrawlerService;
+        this.reActEngine = reActEngine;
     }
 
     /**
@@ -58,19 +72,26 @@ public class PredictionAgent {
         AgentProperties.Prediction cfg = properties.getPrediction();
         PredictionOutcome outcome = new PredictionOutcome();
 
+        // 0) RAG 检索: 先从知识库取回该标的相关的历史理财与核心波动资料
+        String ragQuery = "预测 " + assetName + "(" + assetCode + ") 短期涨跌; 历史波动 盈亏 风险";
+        List<Map<String, Object>> ragSnippets = safeRetrieve(ragQuery, 6);
+        outcome.setRagSnippets(ragSnippets);
+        String ragContext = formatRag(ragSnippets);
+
         // 1) 思维链拆分
         List<String> dimensions = decompose(config, assetName, assetCode);
         outcome.setDecomposition(dimensions);
 
-        // 2) 思维树展开
+        // 2) 思维树展开(注入 RAG 资料)
         ThoughtNode root = buildThoughtTree(config, assetName, assetCode,
-                historySummary, newsSummary, dimensions, cfg.getBranches());
+                historySummary + "\n【RAG 检索资料】\n" + ragContext,
+                newsSummary, dimensions, cfg.getBranches());
         outcome.setThoughtTree(root);
 
-        // 3) 多轮判断
+        // 3) 多轮 ReAct 判断
         String treeText = renderTree(root);
-        List<VoteResult> votes = multiRoundVote(config, assetName, assetCode,
-                historySummary, newsSummary, holdingSummary, treeText, cfg.getRounds());
+        List<VoteResult> votes = multiRoundReAct(config, assetName, assetCode,
+                historySummary, newsSummary, holdingSummary, ragContext, treeText, cfg.getRounds());
         outcome.setVotes(votes);
         outcome.setRounds(votes.size());
 
@@ -91,14 +112,18 @@ public class PredictionAgent {
                 + "只输出 JSON 数组, 每个元素是一个维度名称字符串, 不要输出其他文字。";
         String user = String.format("标的: %s(%s)。请给出分析维度 JSON 数组。", assetName, assetCode);
 
-        String resp = aiClient.chat(config, List.of(ChatMessage.system(sys), ChatMessage.user(user)));
-        JsonNode node = JsonExtractor.extract(objectMapper, resp);
         List<String> dims = new ArrayList<>();
-        if (node != null && node.isArray()) {
-            node.forEach(n -> {
-                String s = n.isTextual() ? n.asText() : n.path("name").asText("");
-                if (!s.isBlank()) dims.add(s.trim());
-            });
+        try {
+            String resp = aiClient.chat(config, List.of(ChatMessage.system(sys), ChatMessage.user(user)));
+            JsonNode node = JsonExtractor.extract(objectMapper, resp);
+            if (node != null && node.isArray()) {
+                node.forEach(n -> {
+                    String s = n.isTextual() ? n.asText() : n.path("name").asText("");
+                    if (!s.isBlank()) dims.add(s.trim());
+                });
+            }
+        } catch (Exception e) {
+            log.warn("预测思维链拆分失败, 使用默认维度: {}", e.getMessage());
         }
         if (dims.isEmpty()) {
             dims.add("历史价格与趋势");
@@ -158,35 +183,52 @@ public class PredictionAgent {
         return root;
     }
 
-    // ---------------- 步骤 3: 多轮判断 ----------------
+    // ---------------- 步骤 3: 多轮 ReAct 判断 ----------------
 
-    private List<VoteResult> multiRoundVote(AiConfig config, String assetName, String assetCode,
-                                            String historySummary, String newsSummary,
-                                            String holdingSummary, String treeText, int rounds) {
+    private List<VoteResult> multiRoundReAct(AiConfig config, String assetName, String assetCode,
+                                             String historySummary, String newsSummary,
+                                             String holdingSummary, String ragContext,
+                                             String treeText, int rounds) {
         List<VoteResult> votes = new ArrayList<>();
-        String sys = "你是严谨的投资决策评审。基于给定的思维树、历史信息、最新新闻与持仓情况, "
-                + "对标的短期(未来 1~4 周)走势做出独立裁决。"
-                + "只输出 JSON: {\"verdict\":\"UP|DOWN\",\"confidence\":0~1,\"reason\":\"...\"}。"
-                + "verdict 只能是 UP 或 DOWN, 不允许中立。";
 
+        // ReAct 可用工具: 从 RAG 知识库检索, 以及检索最新新闻
+        Map<String, Function<String, String>> tools = new LinkedHashMap<>();
+        tools.put("RAG_SEARCH", input -> ragService.retrieveAsContext(
+                (input == null || input.isBlank()) ? (assetName + " " + assetCode) : input, 5));
+        tools.put("NEWS_SEARCH", input -> {
+            String kw = (input == null || input.isBlank()) ? assetName : input;
+            var news = newsCrawlerService.fetchAndStore(assetCode, kw);
+            if (news.isEmpty()) return "(未检索到相关新闻)";
+            StringBuilder sb = new StringBuilder();
+            news.stream().limit(5).forEach(n -> sb.append("- ").append(n.getTitle())
+                    .append(n.getSummary() == null ? "" : (": " + n.getSummary())).append("\n"));
+            return sb.toString();
+        });
+
+        String rolePreamble = "你是严谨的投资决策评审, 正在对单只标的的短期(未来1~4周)走势做独立裁决。"
+                + "你可以使用工具 RAG_SEARCH(检索历史理财与核心波动知识库) 与 NEWS_SEARCH(检索最新财经新闻) 来补充证据。";
+        String finalSchema = "{\"verdict\":\"UP或DOWN(不允许中立)\",\"confidence\":0到1之间的数字,\"reason\":\"裁决理由\"}";
+
+        int maxSteps = 4;
         for (int i = 1; i <= rounds; i++) {
-            String user = "第 " + i + " 轮独立裁决。\n"
-                    + "标的: " + assetName + "(" + assetCode + ")\n"
+            String task = "第 " + i + " 轮裁决。标的: " + assetName + "(" + assetCode + ")\n"
                     + "【思维树】\n" + treeText + "\n"
                     + "【历史信息】\n" + safe(historySummary) + "\n"
+                    + "【RAG 初始检索】\n" + safe(ragContext) + "\n"
                     + "【最新新闻】\n" + safe(newsSummary) + "\n"
                     + "【当前持仓与盈亏】\n" + safe(holdingSummary) + "\n"
-                    + "请给出本轮裁决 JSON。";
+                    + "请通过 ReAct 方式, 必要时调用工具补充证据, 最终给出 UP/DOWN 裁决。";
+
             VoteResult v = new VoteResult();
             v.setRound(i);
             try {
-                String resp = aiClient.chat(config,
-                        List.of(ChatMessage.system(sys), ChatMessage.user(user)));
-                JsonNode node = JsonExtractor.extract(objectMapper, resp);
+                ReActResult rr = reActEngine.run(config, rolePreamble, task, finalSchema, tools, maxSteps);
+                v.setReactSteps(rr.getSteps());
+                JsonNode node = JsonExtractor.extract(objectMapper, rr.getFinalAnswer());
                 if (node != null) {
                     String verdict = node.path("verdict").asText("").trim().toUpperCase();
                     if (!verdict.equals("UP") && !verdict.equals("DOWN")) {
-                        verdict = "DOWN".equalsIgnoreCase(verdict) ? "DOWN" : "UP";
+                        verdict = verdict.contains("DOWN") ? "DOWN" : "UP";
                     }
                     v.setVerdict(verdict);
                     v.setConfidence(clamp01(node.path("confidence").asDouble(0.5)));
@@ -194,10 +236,10 @@ public class PredictionAgent {
                 } else {
                     v.setVerdict("UP");
                     v.setConfidence(0.5);
-                    v.setReason("解析失败, 默认中性偏多。");
+                    v.setReason("ReAct 结果解析失败, 默认中性偏多。");
                 }
             } catch (Exception e) {
-                log.warn("第 {} 轮裁决失败: {}", i, e.getMessage());
+                log.warn("第 {} 轮 ReAct 裁决失败: {}", i, e.getMessage());
                 v.setVerdict("UP");
                 v.setConfidence(0.5);
                 v.setReason("调用异常: " + e.getMessage());
@@ -289,6 +331,27 @@ public class PredictionAgent {
             m.put("children", kids);
         }
         return m;
+    }
+
+    private List<Map<String, Object>> safeRetrieve(String query, int k) {
+        try {
+            return ragService.retrieve(query, k);
+        } catch (Exception e) {
+            log.warn("RAG 检索失败: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    private String formatRag(List<Map<String, Object>> snippets) {
+        if (snippets == null || snippets.isEmpty()) {
+            return "(RAG 知识库暂无相关资料)";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Map<String, Object> s : snippets) {
+            sb.append("- [").append(s.get("type")).append(" | 相关度").append(s.get("score"))
+                    .append("] ").append(s.get("content")).append("\n");
+        }
+        return sb.toString();
     }
 
     private String safe(String s) {

@@ -226,6 +226,24 @@ CREATE TABLE advisor_report (
     KEY idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='理财分析报告表';
 
+-- ---------------------------------------------------------------------
+-- 12. RAG 知识文档表(历史理财情况 + 核心股票/基金波动)
+--     作为检索增强(RAG)的源文档, 向量索引在应用内存中重建
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS rag_document;
+CREATE TABLE rag_document (
+    id              BIGINT          NOT NULL AUTO_INCREMENT COMMENT '主键',
+    doc_type        VARCHAR(32)     NOT NULL COMMENT '文档类型 ASSET_VOLATILITY/HOLDING_PNL/FINANCE_OVERVIEW/PREDICTION_HISTORY/FINANCE_PLAN/SALARY',
+    ref_code        VARCHAR(64)     DEFAULT NULL COMMENT '关联代码(资产代码等)',
+    title           VARCHAR(255)    DEFAULT NULL COMMENT '标题',
+    content         LONGTEXT        NOT NULL COMMENT '文档内容(被向量化的文本)',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    KEY idx_doc_type (doc_type),
+    KEY idx_ref_code (ref_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='RAG 知识文档表';
+
 -- =====================================================================
 -- 初始化示例数据(可选)
 -- =====================================================================

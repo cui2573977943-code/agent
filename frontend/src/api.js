@@ -33,6 +33,8 @@ export const api = {
   createAsset: (data) => http.post('/assets', data),
   updatePrice: (id, latestPrice) => http.put(`/assets/${id}/price`, { latestPrice }),
   deleteAsset: (id) => http.delete(`/assets/${id}`),
+  addPriceHistory: (id, points) => http.post(`/assets/${id}/price-history`, points),
+  priceHistory: (id) => http.get(`/assets/${id}/price-history`),
 
   // 持仓 / 交易
   listHoldings: () => http.get('/holdings'),
@@ -58,6 +60,11 @@ export const api = {
   advisorSummary: () => http.post('/advisor/summary'),
   advisorAdvice: (intention, fetchNews) => http.post('/advisor/advice', { intention, fetchNews }),
   advisorReports: (type) => http.get('/advisor/reports', { params: type ? { type } : {} }),
+
+  // RAG 知识库
+  ragRebuild: () => http.post('/rag/rebuild'),
+  ragDocuments: () => http.get('/rag/documents'),
+  ragSearch: (query, maxResults) => http.post('/rag/search', { query, maxResults }),
 }
 
 export default api

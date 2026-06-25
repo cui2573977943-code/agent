@@ -62,6 +62,12 @@
             <artifactId>langchain4j-open-ai</artifactId>
             <version>1.16.2</version>
         </dependency>
+        <!-- 本地嵌入模型(AllMiniLM-L6-v2, ONNX 内置), 用于构建 RAG 向量, 无需额外 embedding API -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+            <version>1.16.2-beta26</version>
+        </dependency>
 
         <!-- Lombok 简化样板代码 -->
         <dependency>

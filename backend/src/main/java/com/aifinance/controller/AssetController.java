@@ -49,4 +49,18 @@ public class AssetController {
         assetService.delete(id);
         return ApiResponse.ok(null);
     }
+
+    /** 批量录入价格历史(用于核心波动 RAG) */
+    @PostMapping("/{id}/price-history")
+    public ApiResponse<Map<String, Object>> addPriceHistory(
+            @PathVariable Long id, @RequestBody List<Dtos.PricePointRequest> points) {
+        int n = assetService.addPriceHistory(id, points);
+        return ApiResponse.ok(Map.of("saved", n));
+    }
+
+    /** 查询价格历史 */
+    @GetMapping("/{id}/price-history")
+    public ApiResponse<List<com.aifinance.entity.PriceHistory>> priceHistory(@PathVariable Long id) {
+        return ApiResponse.ok(assetService.priceHistory(id));
+    }
 }

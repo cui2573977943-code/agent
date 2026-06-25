@@ -1,6 +1,10 @@
 package com.aifinance.service.ai.tot;
 
+import com.aifinance.service.ai.react.ReActStep;
 import lombok.Data;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 单轮验证投票结果。
@@ -14,4 +18,6 @@ public class VoteResult {
     /** 该轮模型自评置信度(0-1) */
     private double confidence;
     private String reason;
+    /** 该轮 ReAct 推理轨迹(若使用 ReAct 模式) */
+    private List<ReActStep> reactSteps = new ArrayList<>();
 }

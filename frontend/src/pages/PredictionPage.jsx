@@ -13,6 +13,9 @@ export default function PredictionPage() {
   const [result, setResult] = useState(null)
   const [history, setHistory] = useState([])
   const [err, setErr] = useState(null)
+  const [ragCount, setRagCount] = useState(null)
+  const [ragMsg, setRagMsg] = useState(null)
+  const [openTrace, setOpenTrace] = useState({})
 
   const load = async () => {
     try {
@@ -20,6 +23,10 @@ export default function PredictionPage() {
       setAssets(a)
       if (a.length && !assetCode) setAssetCode(a[0].code)
       setHistory(await api.predictionHistory())
+      try {
+        const docs = await api.ragDocuments()
+        setRagCount(docs.length)
+      } catch (_) {}
     } catch (e) {
       setErr(e.message)
     }
@@ -28,6 +35,18 @@ export default function PredictionPage() {
   useEffect(() => {
     load()
   }, [])
+
+  const rebuildRag = async () => {
+    setErr(null)
+    setRagMsg(null)
+    try {
+      const r = await api.ragRebuild()
+      setRagCount(r.documentCount)
+      setRagMsg(`知识库已重建，共索引 ${r.documentCount} 篇文档`)
+    } catch (e) {
+      setErr(e.message)
+    }
+  }
 
   const run = async () => {
     setErr(null)
@@ -48,11 +67,25 @@ export default function PredictionPage() {
     <div>
       <h1 className="page-title">AI 涨势预测</h1>
       <p className="page-desc">
-        基于<strong>思维树(Tree-of-Thought)</strong>：先思维链拆分分析维度 → 读取历史数据并爬取最新新闻 →
-        展开思维树多分支 → 多轮独立裁决 → 多数派占比超过 60% 才确认结论。
+        <strong>RAG + 思维树(ToT) + ReAct + 多轮投票</strong>：先从知识库检索该标的的历史理财与核心波动资料 →
+        思维链拆分维度 → 思维树多分支展开 → 多轮 ReAct(思考-行动-观察, 可调用 RAG/新闻工具)独立裁决 →
+        多数派占比超过 60% 才确认结论。
       </p>
 
       {err && <div className="alert error">{err}</div>}
+      {ragMsg && <div className="alert ok">{ragMsg}</div>}
+
+      <div className="card">
+        <div className="flex between center">
+          <div>
+            <h3 style={{ margin: 0 }}>📚 RAG 知识库</h3>
+            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+              来源：历史理财情况 + 核心股票/基金波动。已索引 {ragCount == null ? '-' : ragCount} 篇文档。
+            </div>
+          </div>
+          <button className="ghost" onClick={rebuildRag}>重建知识库</button>
+        </div>
+      </div>
 
       <div className="card">
         <div className="form-grid">
@@ -121,8 +154,23 @@ export default function PredictionPage() {
             )}
           </div>
 
+          {result.ragSnippets?.length > 0 && (
+            <div className="card">
+              <h3>① RAG 检索资料（预测前从知识库取回）</h3>
+              {result.ragSnippets.map((s, i) => (
+                <div key={i} style={{ marginBottom: 10 }}>
+                  <div className="flex between">
+                    <span className="badge fund">{s.type}</span>
+                    <span className="muted" style={{ fontSize: 12 }}>相关度 {s.score}</span>
+                  </div>
+                  <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{s.content}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="card">
-            <h3>① 思维链拆分</h3>
+            <h3>② 思维链拆分</h3>
             <div className="steps">
               {result.decomposition?.map((d, i) => (
                 <span className="step-tag" key={i}>
@@ -133,13 +181,13 @@ export default function PredictionPage() {
           </div>
 
           <div className="card">
-            <h3>② 思维树展开</h3>
+            <h3>③ 思维树展开</h3>
             <ThoughtTree tree={result.thoughtTree} />
           </div>
 
           <div className="card">
-            <h3>③ 多轮独立裁决</h3>
-            <div>
+            <h3>④ 多轮 ReAct 裁决与投票</h3>
+            <div style={{ marginBottom: 12 }}>
               {result.votes?.map((v) => (
                 <span className="vote-chip" key={v.round}>
                   第{v.round}轮:{' '}
@@ -148,6 +196,35 @@ export default function PredictionPage() {
                 </span>
               ))}
             </div>
+            {result.votes?.map((v) => (
+              <div key={v.round} style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 10 }}>
+                <div className="flex between center">
+                  <div>
+                    <strong>第 {v.round} 轮</strong>{' '}
+                    <span className={'badge ' + (v.verdict === 'UP' ? 'up' : 'down')}>{v.verdict}</span>
+                    {v.reactSteps?.length > 0 && (
+                      <span className="muted" style={{ fontSize: 12, marginLeft: 8 }}>
+                        {v.reactSteps.length} 步 ReAct 推理
+                      </span>
+                    )}
+                  </div>
+                  {v.reactSteps?.length > 0 && (
+                    <button className="ghost sm" onClick={() => setOpenTrace({ ...openTrace, [v.round]: !openTrace[v.round] })}>
+                      {openTrace[v.round] ? '收起轨迹' : '展开 ReAct 轨迹'}
+                    </button>
+                  )}
+                </div>
+                {v.reason && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{v.reason}</div>}
+                {openTrace[v.round] && v.reactSteps?.map((s) => (
+                  <div className="tree-node" key={s.step}>
+                    <div className="tree-title">步骤 {s.step}{s.action ? ` · ${s.action}` : ''}</div>
+                    {s.thought && <div className="tree-meta">💭 思考：{s.thought}</div>}
+                    {s.actionInput && <div className="tree-meta">⚡ 行动入参：{s.actionInput}</div>}
+                    {s.observation && <div className="tree-meta">👁 观察：{s.observation}</div>}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </>
       )}
