@@ -1,0 +1,76 @@
+extends Node
+
+const DEFAULT_LEVEL_PATH := "res://data/levels/CH01_L01.json"
+const DEFAULT_DIFFICULTY_PATH := "res://data/ai/difficulty_profiles.json"
+const DEFAULT_CLASSES_PATH := "res://data/units/classes.json"
+const DEFAULT_WEAPONS_PATH := "res://data/units/weapons.json"
+const DEFAULT_TERRAINS_PATH := "res://data/terrains/base_terrains.json"
+
+var current_level_id := "CH01_L01"
+var difficulty_id := "normal"
+var level_data: Dictionary = {}
+var difficulty_profile: Dictionary = {}
+var class_catalog: Dictionary = {}
+var weapon_catalog: Dictionary = {}
+var terrain_catalog_data: Dictionary = {}
+
+func _ready() -> void:
+	load_class_catalog()
+	load_weapon_catalog()
+	load_terrain_catalog()
+	load_difficulty(difficulty_id)
+	load_level(DEFAULT_LEVEL_PATH)
+
+func load_json(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		push_error("Missing JSON file: %s" % path)
+		return {}
+
+	var file := FileAccess.open(path, FileAccess.READ)
+	var text := file.get_as_text()
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		push_error("Invalid JSON dictionary: %s" % path)
+		return {}
+	return parsed
+
+func load_level(path: String = DEFAULT_LEVEL_PATH) -> Dictionary:
+	level_data = load_json(path)
+	current_level_id = level_data.get("level_id", current_level_id)
+	return level_data
+
+func load_difficulty(target_difficulty_id: String) -> Dictionary:
+	var all_profiles := load_json(DEFAULT_DIFFICULTY_PATH)
+	for profile in all_profiles.get("profiles", []):
+		if profile.get("difficulty_id", "") == target_difficulty_id:
+			difficulty_profile = profile
+			difficulty_id = target_difficulty_id
+			return difficulty_profile
+
+	push_warning("Difficulty profile not found: %s" % target_difficulty_id)
+	difficulty_profile = {}
+	return difficulty_profile
+
+func load_class_catalog(path: String = DEFAULT_CLASSES_PATH) -> Dictionary:
+	class_catalog.clear()
+	var data := load_json(path)
+	for entry in data.get("classes", []):
+		class_catalog[entry.get("class_id", "")] = entry
+	return class_catalog
+
+func load_weapon_catalog(path: String = DEFAULT_WEAPONS_PATH) -> Dictionary:
+	weapon_catalog.clear()
+	var data := load_json(path)
+	for entry in data.get("weapons", []):
+		weapon_catalog[entry.get("weapon_id", "")] = entry
+	return weapon_catalog
+
+func get_class_data(class_id: String) -> Dictionary:
+	return class_catalog.get(class_id, {})
+
+func get_weapon_data(weapon_id: String) -> Dictionary:
+	return weapon_catalog.get(weapon_id, {})
+
+func load_terrain_catalog(path: String = DEFAULT_TERRAINS_PATH) -> Dictionary:
+	terrain_catalog_data = load_json(path)
+	return terrain_catalog_data

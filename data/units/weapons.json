@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "weapons": [
+    {
+      "weapon_id": "heirloom_sword",
+      "display_name": "Heirloom Sword",
+      "weapon_type": "sword",
+      "element": "flame",
+      "power": 5,
+      "hit": 82,
+      "crit": 8,
+      "min_range": 1,
+      "max_range": 1,
+      "experience_on_hit": 12,
+      "experience_on_kill": 40
+    },
+    {
+      "weapon_id": "yew_bow",
+      "display_name": "Yew Bow",
+      "weapon_type": "bow",
+      "element": "verdant",
+      "power": 4,
+      "hit": 78,
+      "crit": 4,
+      "min_range": 2,
+      "max_range": 2,
+      "experience_on_hit": 10,
+      "experience_on_kill": 35
+    },
+    {
+      "weapon_id": "training_lance",
+      "display_name": "Training Lance",
+      "weapon_type": "lance",
+      "element": "steel",
+      "power": 4,
+      "hit": 76,
+      "crit": 0,
+      "min_range": 1,
+      "max_range": 1,
+      "experience_on_hit": 8,
+      "experience_on_kill": 25
+    },
+    {
+      "weapon_id": "short_blade",
+      "display_name": "Short Blade",
+      "weapon_type": "dagger",
+      "element": "tide",
+      "power": 3,
+      "hit": 84,
+      "crit": 6,
+      "min_range": 1,
+      "max_range": 1,
+      "experience_on_hit": 8,
+      "experience_on_kill": 25
+    },
+    {
+      "weapon_id": "ember_tome",
+      "display_name": "Ember Tome",
+      "weapon_type": "tome",
+      "element": "flame",
+      "power": 5,
+      "hit": 74,
+      "crit": 2,
+      "min_range": 1,
+      "max_range": 2,
+      "experience_on_hit": 8,
+      "experience_on_kill": 25
+    }
+  ]
+}

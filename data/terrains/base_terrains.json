@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "terrains": [
+    {
+      "terrain_id": "plain",
+      "display_name": "平原",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 0,
+      "element_affinity": "none",
+      "dynamic_tags": [],
+      "elevation": 0,
+      "cover_type": "none",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "none",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "forest",
+      "display_name": "森林",
+      "move_cost": {
+        "infantry": 2,
+        "cavalry": 3,
+        "flyer": 1
+      },
+      "defense_mod": 1,
+      "hit_mod": 0,
+      "avoid_mod": 10,
+      "crit_mod": 0,
+      "element_affinity": "verdant",
+      "dynamic_tags": [],
+      "elevation": 0,
+      "cover_type": "partial",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "none",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "stone_bridge",
+      "display_name": "石桥",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": -5,
+      "crit_mod": 0,
+      "element_affinity": "steel",
+      "dynamic_tags": [],
+      "elevation": 1,
+      "cover_type": "none",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "bridge",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "canvas_rift",
+      "display_name": "画布裂隙",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 10,
+      "element_affinity": "flame",
+      "dynamic_tags": ["story_trigger"],
+      "elevation": 0,
+      "cover_type": "none",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "story_rift",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "ancient_battlefield_mist",
+      "display_name": "古战场雾",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 2,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": -15,
+      "crit_mod": 10,
+      "element_affinity": "steel",
+      "dynamic_tags": ["blood_mist", "spreading"],
+      "elevation": 0,
+      "cover_type": "obscured",
+      "memory_turns": 3,
+      "spread_every_turns": 3,
+      "interactive": {
+        "type": "mist",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "holy_stone_circle",
+      "display_name": "圣痕石阵",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 1,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 0,
+      "element_affinity": "tide",
+      "dynamic_tags": ["heal_on_turn_start", "objective_value"],
+      "elevation": 0,
+      "cover_type": "sacred",
+      "memory_turns": 0,
+      "heal_percent": 5,
+      "interactive": {
+        "type": "capture_point",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "tidal_channel",
+      "display_name": "潮汐渠",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 2,
+        "flyer": 1
+      },
+      "defense_mod": 0,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 0,
+      "element_affinity": "tide",
+      "dynamic_tags": ["tidal"],
+      "elevation": -1,
+      "cover_type": "none",
+      "memory_turns": 0,
+      "blocked_on_even_turns": true,
+      "interactive": {
+        "type": "tide",
+        "hp": 0,
+        "destructible": false
+      }
+    },
+    {
+      "terrain_id": "crumbling_wall",
+      "display_name": "崩塌城墙",
+      "move_cost": {
+        "infantry": 99,
+        "cavalry": 99,
+        "flyer": 1
+      },
+      "defense_mod": 3,
+      "hit_mod": 0,
+      "avoid_mod": 5,
+      "crit_mod": 0,
+      "element_affinity": "steel",
+      "dynamic_tags": ["destructible", "becomes_rubble"],
+      "elevation": 2,
+      "cover_type": "full",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "wall",
+        "hp": 30,
+        "destructible": true,
+        "on_destroy": "rubble"
+      }
+    },
+    {
+      "terrain_id": "covenant_altar",
+      "display_name": "契约祭坛",
+      "move_cost": {
+        "infantry": 1,
+        "cavalry": 1,
+        "flyer": 1
+      },
+      "defense_mod": 1,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 5,
+      "element_affinity": "flame",
+      "dynamic_tags": ["capture_once", "summon_reinforcement"],
+      "elevation": 0,
+      "cover_type": "ritual",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "altar",
+        "hp": 0,
+        "destructible": false,
+        "uses_per_level": 1
+      }
+    },
+    {
+      "terrain_id": "rubble",
+      "display_name": "碎石",
+      "move_cost": {
+        "infantry": 2,
+        "cavalry": 3,
+        "flyer": 1
+      },
+      "defense_mod": -1,
+      "hit_mod": 0,
+      "avoid_mod": 0,
+      "crit_mod": 0,
+      "element_affinity": "steel",
+      "dynamic_tags": [],
+      "elevation": 0,
+      "cover_type": "rough",
+      "memory_turns": 0,
+      "interactive": {
+        "type": "none",
+        "hp": 0,
+        "destructible": false
+      }
+    }
+  ]
+}

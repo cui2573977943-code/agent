@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "level_id": "CH01_L01",
+  "name": "灰桥伏击",
+  "chapter": "石阵之夜",
+  "objective": "rout",
+  "objective_text": "击败全部敌军，并让 Elara 存活。",
+  "turn_limit": 12,
+  "map_size": {
+    "width": 20,
+    "height": 15
+  },
+  "fog_of_war": false,
+  "tutorial_topics": [
+    "grid_movement",
+    "attack_range",
+    "four_element_advantage",
+    "end_turn"
+  ],
+  "victory_conditions": [
+    {
+      "type": "all_enemies_defeated"
+    }
+  ],
+  "defeat_conditions": [
+    {
+      "type": "unit_defeated",
+      "unit_id": "lord_elara"
+    },
+    {
+      "type": "turn_limit_exceeded",
+      "turn": 12
+    }
+  ],
+  "player_units": [
+    {
+      "id": "lord_elara",
+      "display_name": "Elara",
+      "class_id": "bladeguard",
+      "element": "flame",
+      "level": 1,
+      "spawn": [2, 7],
+      "loadout": ["heirloom_sword", "vulnerary"],
+      "is_required": true
+    },
+    {
+      "id": "ranger_kael",
+      "display_name": "Kael",
+      "class_id": "ranger",
+      "element": "verdant",
+      "level": 1,
+      "spawn": [2, 8],
+      "loadout": ["yew_bow"],
+      "joins_on_turn": 2
+    }
+  ],
+  "enemy_waves": [
+    {
+      "turn": 1,
+      "wave_id": "bridge_ambush",
+      "units": [
+        {
+          "id": "enemy_spearman_01",
+          "display_name": "Varen Spearman",
+          "class_id": "spearwall",
+          "element": "steel",
+          "level": 1,
+          "spawn": [13, 6],
+          "loadout": ["training_lance"],
+          "ai_personality": "defensive"
+        },
+        {
+          "id": "enemy_scout_01",
+          "display_name": "Ash Scout",
+          "class_id": "scout",
+          "element": "tide",
+          "level": 1,
+          "spawn": [15, 8],
+          "loadout": ["short_blade"],
+          "ai_personality": "flanker"
+        },
+        {
+          "id": "enemy_mage_01",
+          "display_name": "Cinder Acolyte",
+          "class_id": "mage",
+          "element": "flame",
+          "level": 1,
+          "spawn": [16, 5],
+          "loadout": ["ember_tome"],
+          "ai_personality": "pressure"
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "wave_id": "north_bank_reinforcement",
+      "reinforcements": {
+        "from": "north_bank",
+        "units": [
+          {
+            "id": "enemy_spearman_02",
+            "display_name": "Varen Spearman",
+            "class_id": "spearwall",
+            "element": "steel",
+            "level": 1,
+            "spawn": [17, 3],
+            "loadout": ["training_lance"],
+            "ai_personality": "defensive"
+          }
+        ]
+      }
+    }
+  ],
+  "terrain_features": [
+    {
+      "type": "plain",
+      "positions": [[0, 0], [1, 0]],
+      "note": "Default terrain for unspecified cells."
+    },
+    {
+      "type": "forest",
+      "positions": [[5, 5], [5, 6], [6, 5], [6, 6], [7, 6]],
+      "element_affinity": "verdant"
+    },
+    {
+      "type": "stone_bridge",
+      "positions": [[9, 7], [10, 7], [11, 7], [12, 7]],
+      "element_affinity": "steel",
+      "interactive": {
+        "type": "bridge",
+        "destructible": false
+      }
+    },
+    {
+      "type": "canvas_rift",
+      "positions": [[12, 7]],
+      "trigger": {
+        "type": "unit_enters",
+        "unit_id": "lord_elara",
+        "dialogue_id": "dialogue_ch01_l01_rift"
+      }
+    }
+  ],
+  "ai_directives": [
+    {
+      "priority": "teach_element_advantage",
+      "description": "第一名枪阵军保持桥头位置，让玩家学习焰克钢。"
+    },
+    {
+      "priority": "avoid_lethal_pressure_before_turn_3",
+      "difficulty_max": "normal"
+    }
+  ],
+  "story_beats": {
+    "pre_battle": "dialogue_ch01_l01_pre",
+    "turn_2": "dialogue_ch01_l01_kael_arrives",
+    "canvas_rift": "dialogue_ch01_l01_rift",
+    "victory": "dialogue_ch01_l01_victory"
+  },
+  "rewards": {
+    "gold": 300,
+    "items": ["iron_lance"],
+    "affinity": {
+      "elara_kael": 1
+    },
+    "unlocks": ["camp_basic_roster", "CH01_L02"]
+  },
+  "balance_notes": {
+    "recommended_player_level": 1,
+    "target_turns": 7,
+    "key_lesson": "Elara 的焰属性对钢系枪阵军有优势，但潮系斥候能威胁她。"
+  }
+}
